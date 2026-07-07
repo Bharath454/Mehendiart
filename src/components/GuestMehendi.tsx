@@ -1,99 +1,134 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Sparkles, ShoppingBag } from "lucide-react";
+import { Sparkles, ShoppingBag, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
-interface GuestMehendiProps {
-  pricing: {
-    arabic: {
-      palm: number;
-      wrist: number;
-      halfHand: number;
-      elbow: number;
-    };
-    indian: {
-      palm: number;
-      wrist: number;
-      halfHand: number;
-      threeQuarterHand: number;
-      elbow: number;
-    };
-  };
+export interface GuestDesign {
+  id: string;
+  name: string;
+  type: "Arabic" | "Indian";
+  price: number;
+  image: string;
+  description?: string;
 }
 
-export default function GuestMehendi({ pricing }: GuestMehendiProps) {
-  const arabicDesigns = [
+export default function GuestMehendi() {
+  const [designs, setDesigns] = useState<GuestDesign[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const defaultDesigns: GuestDesign[] = [
     {
-      id: "palm",
+      id: "arabic-palm",
       name: "Arabic Palm Design",
-      price: pricing?.arabic?.palm || 50,
+      type: "Arabic",
+      price: 50,
       image: "/api/local-image?name=arabic1",
     },
     {
-      id: "wrist",
+      id: "arabic-wrist",
       name: "Arabic Wrist Design",
-      price: pricing?.arabic?.wrist || 100,
+      type: "Arabic",
+      price: 100,
       image: "/api/local-image?name=arabic2",
     },
     {
-      id: "half-hand",
+      id: "arabic-half",
       name: "Arabic Half Hand",
-      price: pricing?.arabic?.halfHand || 150,
+      type: "Arabic",
+      price: 150,
       image: "/api/local-image?name=arabic3",
     },
     {
-      id: "elbow",
+      id: "arabic-elbow",
       name: "Arabic Elbow Length",
-      price: pricing?.arabic?.elbow || 250,
+      type: "Arabic",
+      price: 250,
       image: "/api/local-image?name=arabic4",
     },
-  ];
-
-  const indianDesigns = [
     {
-      id: "palm",
+      id: "indian-palm",
       name: "Indian Palm Design",
-      price: pricing?.indian?.palm || 100,
+      type: "Indian",
+      price: 100,
       image: "/api/local-image?name=indian1",
     },
     {
-      id: "wrist",
+      id: "indian-wrist",
       name: "Indian Wrist Design",
-      price: pricing?.indian?.wrist || 150,
+      type: "Indian",
+      price: 150,
       image: "/api/local-image?name=indian2",
     },
     {
-      id: "half-hand",
+      id: "indian-half",
       name: "Indian Half Hand",
-      price: pricing?.indian?.halfHand || 250,
+      type: "Indian",
+      price: 250,
       image: "/api/local-image?name=indian3",
     },
     {
-      id: "three-quarter",
+      id: "indian-threequarter",
       name: "Indian 3/4 Hand",
-      price: pricing?.indian?.threeQuarterHand || 350,
+      type: "Indian",
+      price: 350,
       image: "/api/local-image?name=indian4",
     },
     {
-      id: "elbow",
+      id: "indian-elbow",
       name: "Indian Elbow Length",
-      price: pricing?.indian?.elbow || 450,
+      type: "Indian",
+      price: 450,
       image: "/api/local-image?name=indian5",
     },
   ];
 
+  useEffect(() => {
+    async function loadDesigns() {
+      try {
+        const response = await fetch("/api/designs");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.designs && data.designs.length > 0) {
+            setDesigns(data.designs);
+          } else {
+            setDesigns(defaultDesigns);
+          }
+        } else {
+          setDesigns(defaultDesigns);
+        }
+      } catch (err) {
+        console.error("Error loading guest designs:", err);
+        setDesigns(defaultDesigns);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadDesigns();
+  }, []);
+
+  const arabicDesigns = designs.filter((d) => d.type === "Arabic");
+  const indianDesigns = designs.filter((d) => d.type === "Indian");
+
+  if (loading) {
+    return (
+      <div className="py-20 flex justify-center items-center bg-white">
+        <Loader2 className="h-10 w-10 text-mehendi-gold animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <section id="guest-mehendi" className="py-20 bg-white relative overflow-hidden">
+    <section id="guest-mehendi" className="py-14 sm:py-20 bg-white relative overflow-hidden w-full">
       <div className="absolute inset-0 pattern-overlay opacity-15" />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-20">
-          <span className="text-xs uppercase tracking-widest text-mehendi-gold font-bold">Party & Guests</span>
-          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-mehendi-darker tracking-wide mt-2 mb-4">
+        <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-20">
+          <span className="text-[10px] sm:text-xs uppercase tracking-widest text-mehendi-gold font-bold">Party & Guests</span>
+          <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-mehendi-darker tracking-wide mt-2 mb-4">
             Guest Mehendi Pricing
           </h2>
           <p className="text-mehendi-darker/70 font-light text-sm sm:text-base leading-relaxed">
@@ -112,7 +147,7 @@ export default function GuestMehendi({ pricing }: GuestMehendiProps) {
             <span className="text-xs text-mehendi-olive/80 font-light ml-auto">Contemporary & Spaced Motifs</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {arabicDesigns.map((design, idx) => (
               <motion.div
                 key={`arabic-${design.id}`}
@@ -122,14 +157,15 @@ export default function GuestMehendi({ pricing }: GuestMehendiProps) {
                 transition={{ duration: 0.4, delay: idx * 0.1 }}
                 className="bg-mehendi-bg/30 rounded-2xl border border-mehendi-gold/10 hover:border-mehendi-gold/30 hover:shadow-lg transition-all duration-300 group overflow-hidden flex flex-col justify-between"
               >
-                <div className="relative aspect-square overflow-hidden shrink-0">
+                {/* Full hand visible, div fully filled */}
+                <div className="relative w-full aspect-[3/4] overflow-hidden shrink-0">
                   <img
                     src={design.image}
                     alt={design.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-all pointer-events-none" />
+                  <div className="absolute inset-0 bg-black/5 group-hover:bg-black/15 transition-all pointer-events-none" />
                 </div>
                 
                 <div className="p-5 flex-grow flex flex-col justify-between bg-gradient-to-b from-white/95 to-white/70">
@@ -169,7 +205,7 @@ export default function GuestMehendi({ pricing }: GuestMehendiProps) {
             <span className="text-xs text-mehendi-olive/80 font-light ml-auto">Dense & Detailed Patterns</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
             {indianDesigns.map((design, idx) => (
               <motion.div
                 key={`indian-${design.id}`}
@@ -179,14 +215,15 @@ export default function GuestMehendi({ pricing }: GuestMehendiProps) {
                 transition={{ duration: 0.4, delay: idx * 0.08 }}
                 className="bg-mehendi-bg/30 rounded-2xl border border-mehendi-gold/10 hover:border-mehendi-gold/30 hover:shadow-lg transition-all duration-300 group overflow-hidden flex flex-col justify-between"
               >
-                <div className="relative aspect-square overflow-hidden shrink-0">
+                {/* Full hand visible, div fully filled */}
+                <div className="relative w-full aspect-[3/4] overflow-hidden shrink-0">
                   <img
                     src={design.image}
                     alt={design.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-all pointer-events-none" />
+                  <div className="absolute inset-0 bg-black/5 group-hover:bg-black/15 transition-all pointer-events-none" />
                 </div>
                 
                 <div className="p-4.5 flex-grow flex flex-col justify-between bg-gradient-to-b from-white/95 to-white/70">

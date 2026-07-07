@@ -17,7 +17,7 @@ export default function Hero() {
   return (
     <section
       id="home"
-      className="relative min-h-[90vh] flex items-center pt-24 pb-16 overflow-hidden bg-gradient-to-b from-mehendi-cream/40 via-mehendi-bg to-mehendi-bg"
+      className="relative min-h-screen sm:min-h-[92vh] flex items-center pt-20 sm:pt-24 pb-12 sm:pb-16 overflow-hidden bg-gradient-to-b from-mehendi-cream/40 via-mehendi-bg to-mehendi-bg w-full"
     >
       {/* Background Pattern Overlay */}
       <div className="absolute inset-0 pattern-overlay opacity-30" />
@@ -51,18 +51,18 @@ export default function Hero() {
         </svg>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           
           {/* Text Content */}
-          <div className="lg:col-span-7 flex flex-col space-y-6 text-center lg:text-left">
+          <div className="lg:col-span-7 flex flex-col space-y-4 sm:space-y-6 text-center lg:text-left">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="inline-flex items-center space-x-2 bg-mehendi-dark/10 text-mehendi-dark px-4 py-2 rounded-full self-center lg:self-start border border-mehendi-dark/20 text-xs font-semibold uppercase tracking-widest"
+              className="inline-flex items-center space-x-2 bg-mehendi-dark/10 text-mehendi-dark px-3 sm:px-4 py-1.5 sm:py-2 rounded-full self-center lg:self-start border border-mehendi-dark/20 text-[10px] sm:text-xs font-semibold uppercase tracking-widest"
             >
-              <Sparkles className="h-4.5 w-4.5 text-mehendi-gold animate-spin-slow" />
+              <Sparkles className="h-4 w-4 text-mehendi-gold animate-spin-slow shrink-0" />
               <span>Professional Mehendi Artist</span>
             </motion.div>
 
@@ -70,7 +70,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 25 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.15 }}
-              className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold text-mehendi-darker leading-[1.1] tracking-wide"
+              className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-bold text-mehendi-darker leading-[1.1] tracking-wide"
             >
               <span className="text-mehendi-dark">Creating beautiful bridal memories</span>{" "}with elegant Mehendi designs
             </motion.h1>
@@ -79,7 +79,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="text-base sm:text-lg text-mehendi-darker/80 max-w-xl font-light leading-relaxed self-center lg:self-start"
+              className="text-sm sm:text-base lg:text-lg text-mehendi-darker/80 max-w-xl font-light leading-relaxed self-center lg:self-start"
             >
               Creating beautiful bridal memories with elegant Mehendi designs. Handcrafted organic henna patterns for brides, families, and celebrations across Chennai.
             </motion.p>
@@ -88,14 +88,14 @@ export default function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.45 }}
-              className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4"
+              className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 sm:gap-4 pt-2 sm:pt-4"
             >
               {/* Main Booking Button */}
               <Link
                 href="/booking"
-                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-mehendi-dark text-mehendi-cream font-medium px-8 py-4 rounded-full border border-mehendi-gold/40 shadow-lg hover:shadow-[0_6px_20px_rgba(53,94,59,0.35)] hover:bg-mehendi-darker hover:scale-105 transition-all duration-300"
+                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-mehendi-dark text-mehendi-cream font-medium px-6 sm:px-8 py-3.5 sm:py-4 rounded-full border border-mehendi-gold/40 shadow-lg hover:shadow-[0_6px_20px_rgba(53,94,59,0.35)] hover:bg-mehendi-darker hover:scale-105 transition-all duration-300 text-sm sm:text-base"
               >
-                <Calendar className="h-5 w-5 text-mehendi-gold" />
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-mehendi-gold shrink-0" />
                 <span>Book Appointment</span>
               </Link>
 
@@ -103,9 +103,9 @@ export default function Hero() {
               <a
                 href="#bridal-packages"
                 onClick={handleScrollToPackages}
-                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-transparent text-mehendi-dark hover:text-mehendi-gold hover:bg-mehendi-dark/5 font-medium px-8 py-4 rounded-full border-2 border-mehendi-dark/20 hover:border-mehendi-gold transition-all duration-300"
+                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-transparent text-mehendi-dark hover:text-mehendi-gold hover:bg-mehendi-dark/5 font-medium px-6 sm:px-8 py-3.5 sm:py-4 rounded-full border-2 border-mehendi-dark/20 hover:border-mehendi-gold transition-all duration-300 text-sm sm:text-base"
               >
-                <Compass className="h-5 w-5" />
+                <Compass className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
                 <span>View Packages</span>
               </a>
             </motion.div>
@@ -116,18 +116,18 @@ export default function Hero() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="lg:col-span-5 flex justify-center relative"
+            className="lg:col-span-5 flex justify-center relative mt-4 sm:mt-8 lg:mt-0"
           >
             {/* Double Arched Frame Shadow Background */}
             <div className="absolute inset-0 bg-mehendi-gold/10 blur-xl rounded-full scale-90 -z-10" />
             
             {/* The Arched Portrait Frame */}
-            <div className="relative w-full max-w-[340px] aspect-[4/5] rounded-t-full border-[8px] border-mehendi-cream shadow-2xl overflow-hidden group">
+            <div className="relative w-full max-w-[280px] sm:max-w-[320px] lg:max-w-[340px] aspect-[4/5] rounded-t-full border-[6px] sm:border-[8px] border-mehendi-cream shadow-2xl overflow-hidden group">
               <div className="absolute inset-0 border-2 border-mehendi-gold/30 rounded-t-full z-10 m-1 pointer-events-none" />
               
               {/* Next.js responsive image replacement using standard img for flexibility */}
               <img
-                src="/api/local-image?name=hero"
+                src="/hero.jpeg"
                 alt="Professional bridal Mehendi artwork on elegant hands"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 loading="eager"

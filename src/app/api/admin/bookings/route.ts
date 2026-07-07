@@ -1,49 +1,44 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
-import { getBookings, updateBookingStatus, getDB, saveDB } from "@/lib/db";
+import connectToDatabase from "@/lib/mongoose";
+import { Booking } from "@/lib/models";
 import { sendApprovalEmail } from "@/lib/notifications";
+import { requireAdmin, authErrorResponse } from "@/lib/auth";
 
-const JWT_SECRET = process.env.JWT_SECRET || "chennai-mehendi-art-secret-key-2026";
-
-// Auth helper
-async function isAuthenticated() {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("admin_token")?.value;
-    
-    if (!token) return false;
-    
-    const decoded = jwt.verify(token, JWT_SECRET);
-    return !!decoded;
-  } catch {
-    return false;
-  }
-}
-
+// GET /api/admin/bookings
 export async function GET() {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    await requireAdmin();
+  } catch (err) {
+    return authErrorResponse(err);
   }
 
   try {
-    const bookings = getBookings();
-    
+    await connectToDatabase();
     // Sort bookings by creation date (newest first)
-    const sorted = [...bookings].sort((a, b) => {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    const bookings = await Booking.find().sort({ createdAt: -1 });
+
+    // Format `_id` to `id` for frontend compatibility
+    const formattedBookings = bookings.map((b) => {
+      const obj = b.toObject();
+      obj.id = obj._id.toString();
+      delete obj._id;
+      delete obj.__v;
+      return obj;
     });
 
-    return NextResponse.json({ bookings: sorted });
+    return NextResponse.json({ bookings: formattedBookings });
   } catch (err: any) {
     console.error("GET Admin Bookings Error:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
+// PATCH /api/admin/bookings
 export async function PATCH(request: Request) {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    await requireAdmin();
+  } catch (err) {
+    return authErrorResponse(err);
   }
 
   try {
@@ -57,31 +52,38 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Invalid booking status" }, { status: 400 });
     }
 
-    const currentBooking = getBookings().find((b) => b.id === id);
+    await connectToDatabase();
 
-    // Special fallback: since lowdb/file db doesn't support "completed" separately, we map updates
-    const updated = updateBookingStatus(id, status);
-
-    if (!updated) {
+    const currentBooking = await Booking.findById(id);
+    if (!currentBooking) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
-    // Send customer approval email only once the admin accepts the booking
-    if (status === "accepted" && currentBooking?.status !== "accepted") {
-      void sendApprovalEmail(updated);
+    const previousStatus = currentBooking.status;
+    currentBooking.status = status as any;
+    const updated = await currentBooking.save();
+
+    const formattedUpdated = updated.toObject();
+    formattedUpdated.id = formattedUpdated._id.toString();
+
+    // Send approval email only when transitioning to accepted
+    if (status === "accepted" && previousStatus !== "accepted") {
+      void sendApprovalEmail(formattedUpdated as any);
     }
 
-    return NextResponse.json({ success: true, booking: updated });
+    return NextResponse.json({ success: true, booking: formattedUpdated });
   } catch (err: any) {
     console.error("PATCH Booking Status Error:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
-// Support DELETE booking (for clean-up/cancellations)
+// DELETE /api/admin/bookings?id=<id>
 export async function DELETE(request: Request) {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    await requireAdmin();
+  } catch (err) {
+    return authErrorResponse(err);
   }
 
   try {
@@ -92,15 +94,13 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Booking ID required" }, { status: 400 });
     }
 
-    const db = getDB();
-    const index = db.bookings.findIndex((b) => b.id === id);
+    await connectToDatabase();
+    
+    const result = await Booking.findByIdAndDelete(id);
 
-    if (index === -1) {
+    if (!result) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
-
-    db.bookings.splice(index, 1);
-    saveDB(db);
 
     return NextResponse.json({ success: true, message: "Booking deleted successfully" });
   } catch (err: any) {

@@ -1,48 +1,118 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { getDB } from "@/lib/db";
-
-const JWT_SECRET = process.env.JWT_SECRET || "chennai-mehendi-art-secret-key-2026";
+import connectToDatabase from "@/lib/mongoose";
+import { Config } from "@/lib/models";
+import { getJWTSecret, createAccessToken, createRefreshToken } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
-    const { username, password } = await request.json();
+    const { email, password } = await request.json();
 
-    if (!username || !password) {
-      return NextResponse.json({ error: "Username and password are required" }, { status: 400 });
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: "Email and password are required" },
+        { status: 400 }
+      );
     }
 
-    const db = getDB();
+    const JWT_SECRET = getJWTSecret();
+    void JWT_SECRET;
 
-    // Verify Username
-    if (username !== db.adminUsername) {
-      return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
+    await connectToDatabase();
+    
+    // Fetch the config singleton to check admin credentials
+    let config = await Config.findOne();
+    if (!config) {
+       // If no config exists, create it (we should have a default seeding mechanism later)
+       config = await Config.create({
+         blockedDates: [],
+         pricing: {
+           bridal: { package1: 3500, package2: 4000, package3: 4500 },
+           arabic: { palm: 50, wrist: 100, halfHand: 150, elbow: 250 },
+           indian: { palm: 100, wrist: 150, halfHand: 250, threeQuarterHand: 350, elbow: 450 }
+         },
+         offers: [],
+         adminPasswordHash: ""
+       });
     }
 
-    // Verify Password
-    const passwordMatch = bcrypt.compareSync(password, db.adminPasswordHash);
+    const adminEmail = process.env.ADMIN_EMAIL || "shahirabanu1706@gmail.com";
+
+    // Verify email
+    if (email.toLowerCase().trim() !== adminEmail.toLowerCase().trim()) {
+      return NextResponse.json(
+        { error: "Invalid email or password" },
+        { status: 401 }
+      );
+    }
+
+    let passwordMatch = false;
+
+    if (config.adminPasswordHash) {
+      passwordMatch = bcrypt.compareSync(password, config.adminPasswordHash);
+    }
+
+    // Fallback: if no hash stored yet, compare against env and store hash
+    if (!passwordMatch && process.env.ADMIN_PASSWORD) {
+      if (password === process.env.ADMIN_PASSWORD) {
+        passwordMatch = true;
+        const hash = bcrypt.hashSync(password, 12);
+        config.adminPasswordHash = hash;
+        await config.save();
+      }
+    }
+
     if (!passwordMatch) {
-      return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Invalid email or password" },
+        { status: 401 }
+      );
     }
 
-    // Generate JWT Token
-    const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: "1d" });
+    const accessToken = createAccessToken({ email: adminEmail, role: "admin" });
+    const refreshToken = createRefreshToken({
+      sub: "admin",
+      role: "admin",
+      email: adminEmail,
+    });
 
-    // Set HTTP-Only Cookie
     const cookieStore = await cookies();
-    cookieStore.set("admin_token", token, {
+    const isProduction = process.env.NODE_ENV === "production";
+
+    cookieStore.set("admin_token", accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isProduction,
       sameSite: "strict",
-      maxAge: 60 * 60 * 24, // 1 day
+      maxAge: 60 * 15, // 15 minutes
       path: "/",
     });
 
-    return NextResponse.json({ success: true, message: "Authentication successful" });
+    cookieStore.set("refresh_token", refreshToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: "strict",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: "/api/auth/refresh",
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Authentication successful",
+      role: "admin",
+    });
   } catch (err: any) {
-    console.error("Login API Error:", err);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    if (err?.message?.includes("JWT_SECRET")) {
+      console.error("[FATAL] JWT_SECRET not configured:", err.message);
+      return NextResponse.json(
+        { error: "Server configuration error. Contact administrator." },
+        { status: 500 }
+      );
+    }
+    console.error("Admin Login API Error:", err);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

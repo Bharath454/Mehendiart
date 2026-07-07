@@ -21,17 +21,84 @@
 }
 
 /* Base style resets and customizations */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 110px;
+  scroll-padding-top: 80px;
   background-color: var(--background);
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 body {
   font-family: var(--font-sans), system-ui, sans-serif;
   overflow-x: hidden;
+  width: 100%;
+  min-width: 320px;
+  margin: 0;
+  padding: 0;
+}
+
+/* Responsive container helper */
+.container-fluid {
+  width: 100%;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Mobile: ≤ 640px */
+@media (max-width: 640px) {
+  html {
+    scroll-padding-top: 70px;
+    font-size: 15px;
+  }
+
+  h1 { font-size: 2rem !important; line-height: 1.15 !important; }
+  h2 { font-size: 1.6rem !important; }
+  h3 { font-size: 1.25rem !important; }
+
+  section {
+    padding-top: 3.5rem !important;
+    padding-bottom: 3.5rem !important;
+  }
+
+  /* Ensure images are never wider than viewport */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* Small tablet: 641px – 768px */
+@media (min-width: 641px) and (max-width: 768px) {
+  html { font-size: 15.5px; }
+}
+
+/* Tablet: 769px – 1024px */
+@media (min-width: 769px) and (max-width: 1024px) {
+  html { font-size: 15.5px; }
+  section {
+    padding-top: 4rem !important;
+    padding-bottom: 4rem !important;
+  }
+}
+
+/* Small laptop: 1025px – 1280px */
+@media (min-width: 1025px) and (max-width: 1280px) {
+  html { font-size: 16px; }
+}
+
+/* Large laptop / desktop: > 1280px */
+@media (min-width: 1281px) {
+  html { font-size: 16px; }
 }
 
 ::selection {
@@ -92,4 +159,31 @@ h1, h2, h3, h4, h5, h6 {
   bottom: 0;
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='32' viewBox='0 0 16 32'%3E%3Cpath d='M16 0c-3.12 0-6.1 1.4-8 4-1.9-2.6-4.88-4-8-4v2c2.42 0 4.7 1.15 6 3.16V32h4V5.16C11.3 3.15 13.58 2 16 2V0zm-8 4v4H4V4h4z' fill='%23d4af37' fill-opacity='0.015' fill-rule='evenodd'/%3E%3C/svg%3E");
+}
+
+/* Utility: hide scrollbar but allow scrolling (used by gallery filter tabs on mobile) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe-area padding for mobile notches */
+@supports (padding: max(0px)) {
+  .safe-area-inset {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+/* Testimonial card — ensure it fills full width on mobile */
+#testimonials .relative {
+  width: 100%;
+}
+
+/* Ensure iframes (Google Maps) are fully responsive */
+iframe {
+  max-width: 100%;
 }

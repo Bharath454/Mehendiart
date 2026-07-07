@@ -7,14 +7,14 @@
       "email": "aishwarya@gmail.com",
       "eventType": "Wedding / Bridal",
       "packageOrGuest": "package",
-      "packageName": "Bridal Package 3 (Full Hands & Legs till Ankle)",
+      "packageName": "Bridal Package 3",
       "price": 4500,
-      "date": "2026-07-07",
+      "date": "2026-07-09",
       "timeSlot": "10:00 AM - 02:00 PM",
-      "address": "Nungambakkam, Chennai",
+      "address": "No:42/87, Angappan Naicke Street, George Town, Mannady, Chennai - 600001",
       "additionalNotes": "Please arrive on time. Looking forward to traditional designs.",
       "status": "pending",
-      "createdAt": "2026-07-05T12:17:40.245Z"
+      "createdAt": "2026-07-07T10:07:49.985Z"
     },
     {
       "id": "bk-2",
@@ -26,123 +26,17 @@
       "designType": "Indian",
       "subDesignName": "Half Hand",
       "price": 250,
-      "date": "2026-07-10",
+      "date": "2026-07-12",
       "timeSlot": "03:00 PM - 06:00 PM",
       "address": "Adyar, Chennai",
       "additionalNotes": "Need simple lotus motif design.",
       "status": "accepted",
-      "createdAt": "2026-07-04T12:17:40.245Z"
-    },
-    {
-      "id": "bk-3",
-      "name": "Pooja Sen",
-      "mobile": "9123456789",
-      "email": "pooja@outlook.com",
-      "eventType": "Festival",
-      "packageOrGuest": "guest",
-      "designType": "Arabic",
-      "subDesignName": "Elbow",
-      "price": 250,
-      "date": "2026-07-02",
-      "timeSlot": "11:00 AM - 01:00 PM",
-      "address": "Velachery, Chennai",
-      "status": "completed",
-      "createdAt": "2026-07-01T12:17:40.245Z"
-    },
-    {
-      "name": "OMAR ABUSAEED",
-      "mobile": "8757868977",
-      "email": "abusaeedpm@gmail.com",
-      "eventType": "Wedding / Bridal",
-      "packageOrGuest": "guest",
-      "packageName": "",
-      "designType": "Arabic",
-      "subDesignName": "Palm",
-      "price": 50,
-      "date": "2026-07-08",
-      "timeSlot": "08:00 AM - 10:00 AM",
-      "address": "hgasjcbhsjmduksdhvksdgfkuisekuy",
-      "additionalNotes": "fndufufjhfiuefiuwefui",
-      "id": "bk-1783310810427-8f7mfdgej",
-      "status": "pending",
-      "createdAt": "2026-07-06T04:06:50.427Z"
-    },
-    {
-      "name": "vs barath",
-      "mobile": "8015872307",
-      "email": "vsbarath095@gmail.com",
-      "eventType": "Wedding / Bridal",
-      "packageOrGuest": "package",
-      "packageName": "Bridal Package 1 (Basic)",
-      "designType": "",
-      "subDesignName": "",
-      "price": 3500,
-      "date": "2026-07-06",
-      "timeSlot": "10:00 AM - 01:00 PM",
-      "address": "ehrhjhefgehfejhgfefgjehj",
-      "additionalNotes": "",
-      "id": "bk-1783311718923-tlef1fta1",
-      "status": "pending",
-      "createdAt": "2026-07-06T04:21:58.923Z"
-    },
-    {
-      "name": "OMAR ABUSAEED",
-      "mobile": "9025206916",
-      "email": "abusaeedpm@gmail.com",
-      "eventType": "Wedding / Bridal",
-      "packageOrGuest": "package",
-      "packageName": "Bridal Package 1 (Basic)",
-      "designType": "",
-      "subDesignName": "",
-      "price": 3500,
-      "date": "2026-07-09",
-      "timeSlot": "08:00 AM - 10:00 AM",
-      "address": "rrtybhbhnhnhn h",
-      "additionalNotes": "",
-      "id": "bk-1783327579211-rgi79s6qd",
-      "status": "pending",
-      "createdAt": "2026-07-06T08:46:19.211Z"
-    },
-    {
-      "name": "OMAR ABUSAEED",
-      "mobile": "9025206916",
-      "email": "abusaeedpm@gmail.com",
-      "eventType": "Wedding / Bridal",
-      "packageOrGuest": "package",
-      "packageName": "Bridal Package 1 (Basic)",
-      "designType": "",
-      "subDesignName": "",
-      "price": 3500,
-      "date": "2026-07-11",
-      "timeSlot": "01:00 PM - 03:00 PM",
-      "address": "jhgcudgfjhfjg",
-      "additionalNotes": "",
-      "id": "bk-1783329344258-h0fomnkhg",
-      "status": "pending",
-      "createdAt": "2026-07-06T09:15:44.258Z"
-    },
-    {
-      "name": "OMAR ABUSAEED",
-      "mobile": "9025206916",
-      "email": "abusaeedpm@gmail.com",
-      "eventType": "Engagement / Roka",
-      "packageOrGuest": "package",
-      "packageName": "Bridal Package 2 (Standard)",
-      "designType": "",
-      "subDesignName": "",
-      "price": 4000,
-      "date": "2026-07-13",
-      "timeSlot": "01:00 PM - 03:00 PM",
-      "address": "dfffhftthththt",
-      "additionalNotes": "",
-      "id": "bk-1783330055793-50schg33b",
-      "status": "pending",
-      "createdAt": "2026-07-06T09:27:35.793Z"
+      "createdAt": "2026-07-06T10:07:49.985Z"
     }
   ],
   "blockedDates": [
     {
-      "date": "2026-07-15",
+      "date": "2026-07-17",
       "reason": "Personal Holiday / Family Function"
     }
   ],
@@ -176,6 +70,124 @@
       "active": true
     }
   ],
+  "adminEmail": "shahirabanu1706@gmail.com",
   "adminUsername": "admin",
-  "adminPasswordHash": "$2b$10$idQvbVNS515KUr6HxLF4meIJDOntl5j9SfCFFf5hOV2l58INleJJe"
+  "adminPasswordHash": "$2b$10$KV7cgPEhrA3a.2SWb8Xgq.5uPVZRSlNKxsyzwLqIusRL1uXtaEFYG",
+  "users": [],
+  "inquiries": [],
+  "bridalPackages": [
+    {
+      "id": "package1",
+      "name": "Bridal Package 1",
+      "image": "/api/local-image?name=bridal1",
+      "description": "Both hands front and back till elbow",
+      "price": 3500,
+      "includes": [
+        "Both hands front and back",
+        "Elbow-length bridal coverage",
+        "Traditional floral, paisley, and mandala detailing",
+        "Customisation for the bride's style"
+      ]
+    },
+    {
+      "id": "package2",
+      "name": "Bridal Package 2",
+      "image": "/api/local-image?name=bridal2",
+      "description": "Hands till elbow with simple leg mehendi",
+      "price": 4000,
+      "includes": [
+        "Both hands front and back till elbow",
+        "Simple leg design",
+        "Balanced bridal detailing for elegant coverage",
+        "Ideal for intimate ceremonies and receptions"
+      ]
+    },
+    {
+      "id": "package3",
+      "name": "Bridal Package 3",
+      "image": "/api/local-image?name=bridal3",
+      "description": "Complete bridal hands and legs till ankle",
+      "price": 4500,
+      "includes": [
+        "Both hands front and back till elbow",
+        "Full legs till ankle",
+        "Luxury bridal detailing for a grand wedding look",
+        "Best choice for elaborate wedding ceremonies"
+      ]
+    }
+  ],
+  "guestDesigns": [
+    {
+      "id": "arabic-palm",
+      "name": "Arabic Palm Design",
+      "type": "Arabic",
+      "price": 50,
+      "image": "/api/local-image?name=arabic1",
+      "description": "Elegant layout on the palm with custom motifs"
+    },
+    {
+      "id": "arabic-wrist",
+      "name": "Arabic Wrist Design",
+      "type": "Arabic",
+      "price": 100,
+      "image": "/api/local-image?name=arabic2",
+      "description": "Wrist length coverage featuring geometric details"
+    },
+    {
+      "id": "arabic-half",
+      "name": "Arabic Half Hand",
+      "type": "Arabic",
+      "price": 150,
+      "image": "/api/local-image?name=arabic3",
+      "description": "Half hand styling with modern paisley elements"
+    },
+    {
+      "id": "arabic-elbow",
+      "name": "Arabic Elbow Length",
+      "type": "Arabic",
+      "price": 250,
+      "image": "/api/local-image?name=arabic4",
+      "description": "Full elbow length contemporary design"
+    },
+    {
+      "id": "indian-palm",
+      "name": "Indian Palm Design",
+      "type": "Indian",
+      "price": 100,
+      "image": "/api/local-image?name=indian1",
+      "description": "Dense traditional patterns on the palm"
+    },
+    {
+      "id": "indian-wrist",
+      "name": "Indian Wrist Design",
+      "type": "Indian",
+      "price": 150,
+      "image": "/api/local-image?name=indian2",
+      "description": "Detailed traditional patterns till the wrist"
+    },
+    {
+      "id": "indian-half",
+      "name": "Indian Half Hand",
+      "type": "Indian",
+      "price": 250,
+      "image": "/api/local-image?name=indian3",
+      "description": "Dense floral detailing covering half the hand"
+    },
+    {
+      "id": "indian-threequarter",
+      "name": "Indian 3/4 Hand",
+      "type": "Indian",
+      "price": 350,
+      "image": "/api/local-image?name=indian4",
+      "description": "Elaborate motifs spanning 3/4 length of arm"
+    },
+    {
+      "id": "indian-elbow",
+      "name": "Indian Elbow Length",
+      "type": "Indian",
+      "price": 450,
+      "image": "/api/local-image?name=indian5",
+      "description": "Complete traditional coverage till the elbow"
+    }
+  ]
 }

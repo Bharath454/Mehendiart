@@ -81,7 +81,7 @@ export default function Testimonials() {
   };
 
   return (
-    <section id="testimonials" className="py-20 bg-white relative overflow-hidden">
+    <section id="testimonials" className="py-14 sm:py-20 bg-white relative overflow-hidden w-full">
       <div className="absolute inset-0 pattern-overlay opacity-15" />
       
       {/* Background circles */}
@@ -104,10 +104,10 @@ export default function Testimonials() {
         </div>
 
         {/* Testimonial slider wrapper */}
-        <div className="relative bg-mehendi-bg/35 border border-mehendi-gold/20 rounded-3xl p-6 sm:p-12 shadow-md">
-          <Quote className="absolute top-6 left-6 h-12 w-12 text-mehendi-gold/15 rotate-180 shrink-0" />
+        <div className="relative bg-mehendi-bg/35 border border-mehendi-gold/20 rounded-3xl p-5 sm:p-8 lg:p-12 shadow-md">
+          <Quote className="absolute top-5 left-5 h-10 sm:h-12 w-10 sm:w-12 text-mehendi-gold/15 rotate-180 shrink-0" />
           
-          <div className="relative min-h-[220px] flex items-center justify-center">
+          <div className="relative min-h-[200px] sm:min-h-[220px] flex items-center justify-center">
             <AnimatePresence mode="wait">
               <motion.div
                 key={testimonials[index].id}
@@ -125,7 +125,7 @@ export default function Testimonials() {
                 </div>
 
                 {/* Text quote */}
-                <p className="text-base sm:text-lg text-mehendi-darker font-light italic leading-relaxed max-w-2xl mb-8">
+                <p className="text-sm sm:text-base lg:text-lg text-mehendi-darker font-light italic leading-relaxed max-w-2xl mb-6 sm:mb-8">
                   "{testimonials[index].text}"
                 </p>
 

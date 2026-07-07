@@ -1,5 +1,4 @@
 import React from "react";
-import { getPricing } from "@/lib/db";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import BridalPackages from "@/components/BridalPackages";
@@ -13,7 +12,6 @@ import Footer from "@/components/Footer";
 export const dynamic = "force-dynamic";
 
 export default function Home() {
-  const pricing = getPricing();
 
   return (
     <>
@@ -24,10 +22,10 @@ export default function Home() {
         <Hero />
 
         {/* 2. Bridal Packages Pricing Grid */}
-        <BridalPackages pricing={pricing} />
+        <BridalPackages />
 
         {/* 3. Guest Party & Festival Henna pricing */}
-        <GuestMehendi pricing={pricing} />
+        <GuestMehendi />
 
         {/* 4. Categorized Image Gallery & Lightbox */}
         <Gallery />

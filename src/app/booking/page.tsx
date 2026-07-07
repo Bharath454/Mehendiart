@@ -9,7 +9,7 @@ export default function BookingPage() {
     <>
       <Navbar />
       
-      <main className="flex-grow pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full relative">
+      <main className="flex-grow pt-20 sm:pt-24 pb-14 sm:pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full relative">
         {/* Subtle decorative vector circles */}
         <div className="absolute top-[20%] right-[10%] w-72 h-72 rounded-full bg-mehendi-gold/5 blur-3xl -z-10" />
         <div className="absolute bottom-[20%] left-[5%] w-96 h-96 rounded-full bg-mehendi-dark/5 blur-3xl -z-10" />

@@ -226,7 +226,7 @@ export default function Gallery() {
   };
 
   return (
-    <section id="gallery" className="py-20 bg-mehendi-bg relative overflow-hidden">
+    <section id="gallery" className="py-14 sm:py-20 bg-mehendi-bg relative overflow-hidden w-full">
       <div className="absolute inset-0 pattern-overlay opacity-20" />
       
       {/* Decorative Gold Dividers */}
@@ -247,8 +247,8 @@ export default function Gallery() {
           <div className="w-24 h-0.5 bg-mehendi-gold mx-auto mt-6" />
         </div>
 
-        {/* Filter Categories Tabs */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-12">
+        {/* Filter Categories Tabs — horizontally scrollable on mobile */}
+        <div className="flex items-center justify-start sm:justify-center gap-2 mb-8 sm:mb-12 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap scrollbar-hide">
           {categories.map((cat) => (
             <button
               key={cat}
@@ -256,7 +256,7 @@ export default function Gallery() {
                 setActiveCategory(cat);
                 closeLightbox();
               }}
-              className={`px-5 py-2.5 rounded-full font-medium text-xs sm:text-sm tracking-wide transition-all duration-300 ${
+              className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-full font-medium text-xs sm:text-sm tracking-wide transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
                 activeCategory === cat
                   ? "bg-mehendi-dark text-mehendi-cream border border-mehendi-gold shadow-md"
                   : "bg-white text-mehendi-dark border border-mehendi-gold/10 hover:border-mehendi-gold/40 hover:bg-mehendi-dark/5"
@@ -270,7 +270,7 @@ export default function Gallery() {
         {/* Image Grid Layout */}
         <motion.div
           layout
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+          className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6"
         >
           <AnimatePresence mode="popLayout">
             {filteredImages.map((img) => (
@@ -282,21 +282,24 @@ export default function Gallery() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.3 }}
                 onClick={() => openLightbox(img.id)}
-                className="relative group aspect-square rounded-2xl overflow-hidden border border-mehendi-gold/10 shadow-md hover:shadow-xl transition-all duration-300 cursor-zoom-in"
+                className="relative group rounded-2xl overflow-hidden border border-mehendi-gold/10 shadow-md hover:shadow-xl transition-all duration-300 cursor-zoom-in"
               >
-                <img
-                  src={img.src}
-                  alt={img.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
-                />
+                {/* Full hand visible, div fully filled */}
+                <div className="w-full aspect-[3/4] overflow-hidden">
+                  <img
+                    src={img.src}
+                    alt={img.title}
+                    className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                </div>
                 
                 {/* Title & Zoom Info overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-5 z-20">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 sm:p-5 z-20">
                   <span className="text-[10px] text-mehendi-gold uppercase tracking-wider font-bold mb-1">
                     {img.category}
                   </span>
-                  <h4 className="font-serif font-semibold text-white text-sm tracking-wide">
+                  <h4 className="font-serif font-semibold text-white text-xs sm:text-sm tracking-wide">
                     {img.title}
                   </h4>
                 </div>

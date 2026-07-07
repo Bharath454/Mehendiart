@@ -1,51 +1,62 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
-import { getDB, saveDB, getPricing, getBlockedDates, getOffers } from "@/lib/db";
+import connectToDatabase from "@/lib/mongoose";
+import { Config, IConfig } from "@/lib/models";
+import { requireAdmin, authErrorResponse } from "@/lib/auth";
 
-const JWT_SECRET = process.env.JWT_SECRET || "chennai-mehendi-art-secret-key-2026";
-
-async function isAuthenticated() {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("admin_token")?.value;
-    
-    if (!token) return false;
-    
-    const decoded = jwt.verify(token, JWT_SECRET);
-    return !!decoded;
-  } catch {
-    return false;
+// Helper to get or create the singleton config document
+export async function getConfig(): Promise<IConfig> {
+  await connectToDatabase();
+  let config = await Config.findOne();
+  if (!config) {
+    config = await Config.create({
+      blockedDates: [],
+      pricing: {
+        bridal: { package1: 3500, package2: 4000, package3: 4500 },
+        arabic: { palm: 50, wrist: 100, halfHand: 150, elbow: 250 },
+        indian: { palm: 100, wrist: 150, halfHand: 250, threeQuarterHand: 350, elbow: 450 }
+      },
+      offers: [],
+      adminPasswordHash: ""
+    });
   }
+  return config;
 }
 
+// GET /api/admin/config
 export async function GET() {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    await requireAdmin();
+  } catch (err) {
+    return authErrorResponse(err);
   }
 
   try {
-    const pricing = getPricing();
-    const blockedDates = getBlockedDates();
-    const offers = getOffers();
+    const config = await getConfig();
 
-    return NextResponse.json({ pricing, blockedDates, offers });
+    return NextResponse.json({ 
+      pricing: config.pricing, 
+      blockedDates: config.blockedDates, 
+      offers: config.offers 
+    });
   } catch (err: any) {
     console.error("GET Admin Config Error:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
+// POST /api/admin/config
 export async function POST(request: Request) {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    await requireAdmin();
+  } catch (err) {
+    return authErrorResponse(err);
   }
 
   try {
     const body = await request.json();
     const { action } = body;
 
-    const db = getDB();
+    const config = await getConfig();
 
     if (action === "toggle_block_date") {
       const { date, reason } = body;
@@ -53,44 +64,87 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Date is required" }, { status: 400 });
       }
 
-      const index = db.blockedDates.findIndex((b) => b.date === date);
-      if (index !== -1) {
-        db.blockedDates.splice(index, 1); // Unblock
-      } else {
-        db.blockedDates.push({ date, reason: reason || "Admin Blocked / Personal Holiday" }); // Block
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return NextResponse.json({ error: "Invalid date format. Expected YYYY-MM-DD" }, { status: 400 });
       }
-      saveDB(db);
-      return NextResponse.json({ success: true, blockedDates: db.blockedDates });
+
+      const index = config.blockedDates.findIndex((b: any) => b.date === date);
+      if (index !== -1) {
+        config.blockedDates.splice(index, 1);
+      } else {
+        config.blockedDates.push({
+          date,
+          reason: reason?.trim() || "Admin Blocked / Personal Holiday",
+        });
+      }
+      await config.save();
+      return NextResponse.json({ success: true, blockedDates: config.blockedDates });
     }
 
     if (action === "update_pricing") {
       const { pricing } = body;
       if (!pricing || !pricing.bridal || !pricing.arabic || !pricing.indian) {
-        return NextResponse.json({ error: "Invalid pricing configuration object" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Invalid pricing configuration object" },
+          { status: 400 }
+        );
       }
 
-      db.pricing = pricing;
-      saveDB(db);
-      return NextResponse.json({ success: true, pricing: db.pricing });
+      const validatePrices = (obj: Record<string, any>): boolean =>
+        Object.values(obj).every((v) =>
+          typeof v === "object" ? validatePrices(v) : typeof v === "number" && v >= 0
+        );
+
+      if (!validatePrices(pricing)) {
+        return NextResponse.json(
+          { error: "All prices must be non-negative numbers" },
+          { status: 400 }
+        );
+      }
+
+      config.pricing = pricing;
+      await config.save();
+      return NextResponse.json({ success: true, pricing: config.pricing });
     }
 
     if (action === "add_offer") {
       const { title, description, code, discountPercent } = body;
       if (!title || !code || !discountPercent) {
-        return NextResponse.json({ error: "Title, coupon code, and discount percent are required" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Title, coupon code, and discount percent are required" },
+          { status: 400 }
+        );
+      }
+
+      const discount = Number(discountPercent);
+      if (isNaN(discount) || discount < 1 || discount > 100) {
+        return NextResponse.json(
+          { error: "Discount percent must be between 1 and 100" },
+          { status: 400 }
+        );
+      }
+
+      const upperCode = code.toUpperCase().trim();
+
+      const exists = config.offers.some((o: any) => o.code === upperCode);
+      if (exists) {
+        return NextResponse.json(
+          { error: "A coupon with this code already exists" },
+          { status: 409 }
+        );
       }
 
       const newOffer = {
         id: `off-${Date.now()}`,
-        title,
-        description: description || "",
-        code: code.toUpperCase(),
-        discountPercent: Number(discountPercent),
+        title: title.trim(),
+        description: description?.trim() || "",
+        code: upperCode,
+        discountPercent: discount,
         active: true,
       };
 
-      db.offers.push(newOffer);
-      saveDB(db);
+      config.offers.push(newOffer);
+      await config.save();
       return NextResponse.json({ success: true, offer: newOffer });
     }
 
@@ -100,14 +154,30 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Offer ID is required" }, { status: 400 });
       }
 
-      const index = db.offers.findIndex((o) => o.id === id);
+      const index = config.offers.findIndex((o: any) => o.id === id);
       if (index === -1) {
         return NextResponse.json({ error: "Offer not found" }, { status: 404 });
       }
 
-      db.offers[index].active = !db.offers[index].active;
-      saveDB(db);
-      return NextResponse.json({ success: true, offer: db.offers[index] });
+      config.offers[index].active = !config.offers[index].active;
+      await config.save();
+      return NextResponse.json({ success: true, offer: config.offers[index] });
+    }
+
+    if (action === "delete_offer") {
+      const { id } = body;
+      if (!id) {
+        return NextResponse.json({ error: "Offer ID is required" }, { status: 400 });
+      }
+
+      const index = config.offers.findIndex((o: any) => o.id === id);
+      if (index === -1) {
+        return NextResponse.json({ error: "Offer not found" }, { status: 404 });
+      }
+
+      config.offers.splice(index, 1);
+      await config.save();
+      return NextResponse.json({ success: true, message: "Offer deleted" });
     }
 
     return NextResponse.json({ error: "Invalid Action" }, { status: 400 });

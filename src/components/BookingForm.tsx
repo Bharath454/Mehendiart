@@ -245,11 +245,11 @@ export default function BookingForm() {
   }
 
   return (
-    <div className="bg-white rounded-3xl border border-mehendi-gold/20 shadow-xl overflow-hidden">
+    <div className="w-full bg-white rounded-3xl border border-mehendi-gold/20 shadow-xl overflow-hidden">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 items-stretch">
         
         {/* Left Side: Booking Fields Form */}
-        <form onSubmit={handleSubmit} className="lg:col-span-7 p-6 sm:p-10 space-y-6">
+        <form onSubmit={handleSubmit} className="lg:col-span-7 p-5 sm:p-8 lg:p-10 space-y-6">
           <div className="border-b border-mehendi-gold/10 pb-4">
             <h3 className="font-serif text-2xl font-bold text-mehendi-darker">Schedule Your Appointment</h3>
             <p className="text-xs text-mehendi-olive/80 font-light mt-1">Please enter your wedding event coordinates below.</p>
@@ -523,8 +523,8 @@ export default function BookingForm() {
         </form>
 
         {/* Right Side: Interactive Calendar Selector */}
-        <div className="lg:col-span-5 bg-mehendi-bg/30 p-6 sm:p-10 border-t lg:border-t-0 lg:border-l border-mehendi-gold/10 flex flex-col justify-center">
-          <div className="mb-6 text-center lg:text-left">
+        <div className="lg:col-span-5 bg-mehendi-bg/30 p-5 sm:p-8 lg:p-10 border-t lg:border-t-0 lg:border-l border-mehendi-gold/10 flex flex-col justify-center">
+          <div className="mb-5 sm:mb-6 text-center lg:text-left">
             <h3 className="font-serif text-lg font-semibold text-mehendi-darker">Select Event Date</h3>
             <p className="text-xs text-mehendi-olive/80 font-light mt-1">Available dates are highlighted. Click to reserve.</p>
           </div>

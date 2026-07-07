@@ -6,7 +6,7 @@ import FloatingWhatsApp from "@/components/FloatingWhatsApp";
 
 const playfair = Playfair_Display({
   variable: "--font-serif",
-  subsets: ["sans-serif", "latin"],
+  subsets: ["latin", "latin-ext"],
 });
 
 const montserrat = Montserrat({
@@ -26,6 +26,12 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_IN",
   },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({

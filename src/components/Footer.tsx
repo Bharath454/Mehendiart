@@ -24,8 +24,8 @@ export default function Footer() {
       {/* Decorative Top Border */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-mehendi-gold to-transparent" />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
           
           {/* Col 1: Brand Info */}
           <div className="flex flex-col space-y-4">
@@ -171,7 +171,7 @@ export default function Footer() {
         </div>
 
         {/* Footer Bottom Copyright */}
-        <div className="border-t border-mehendi-gold/10 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-mehendi-bg/60 font-light space-y-4 md:space-y-0">
+        <div className="border-t border-mehendi-gold/10 mt-10 sm:mt-12 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center text-xs text-mehendi-bg/60 font-light gap-4 sm:gap-0">
           <p>© {new Date().getFullYear()} Chennai Mehendi Art. All Rights Reserved.</p>
           <div className="flex space-x-6">
             <Link href="/admin/login" className="hover:text-mehendi-gold transition-colors">

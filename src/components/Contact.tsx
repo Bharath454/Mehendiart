@@ -9,15 +9,28 @@ export default function Contact() {
   const [isSent, setIsSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Mock sending inquiry message
-    setTimeout(() => {
+    try {
+      const response = await fetch("/api/inquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (response.ok) {
+        setIsSent(true);
+        setFormData({ name: "", email: "", mobile: "", message: "" });
+      } else {
+        const err = await response.json();
+        alert(err.error || "Failed to send inquiry. Please try again.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error sending inquiry. Please try again.");
+    } finally {
       setLoading(false);
-      setIsSent(true);
-      setFormData({ name: "", email: "", mobile: "", message: "" });
-    }, 1000);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -25,7 +38,7 @@ export default function Contact() {
   };
 
   return (
-    <section id="contact" className="py-20 bg-mehendi-bg relative overflow-hidden">
+    <section id="contact" className="py-14 sm:py-20 bg-mehendi-bg relative overflow-hidden w-full">
       <div className="absolute inset-0 pattern-overlay opacity-20" />
 
       {/* Background circles */}
@@ -47,10 +60,10 @@ export default function Contact() {
           <div className="w-24 h-0.5 bg-mehendi-gold mx-auto mt-6" />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
           
           {/* Col 1: Details & Form */}
-          <div className="lg:col-span-6 bg-white rounded-3xl border border-mehendi-gold/25 p-6 sm:p-10 shadow-lg flex flex-col justify-between">
+          <div className="lg:col-span-6 bg-white rounded-3xl border border-mehendi-gold/25 p-5 sm:p-8 lg:p-10 shadow-lg flex flex-col justify-between">
             <div>
               <h3 className="font-serif text-xl font-bold text-mehendi-darker mb-6 border-b border-mehendi-gold/10 pb-3">
                 Send an Inquiry
@@ -219,7 +232,7 @@ export default function Contact() {
 
           {/* Col 2: Interactive Google Map */}
           <div className="lg:col-span-6 flex flex-col">
-            <div className="relative w-full h-full min-h-[350px] rounded-3xl border-[6px] border-white shadow-xl overflow-hidden group">
+            <div className="relative w-full h-full min-h-[280px] sm:min-h-[350px] rounded-3xl border-[4px] sm:border-[6px] border-white shadow-xl overflow-hidden group">
               <div className="absolute inset-0 border-2 border-mehendi-gold/30 rounded-[18px] z-10 m-0.5 pointer-events-none" />
               
               {/* Embed Google Maps Chennai location */}

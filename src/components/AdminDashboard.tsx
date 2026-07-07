@@ -1,26 +1,28 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { 
   LayoutDashboard, 
   Users, 
   Calendar as CalendarIcon, 
-  Settings, 
   LogOut, 
-  TrendingUp, 
   CheckCircle, 
   XCircle, 
   Clock, 
   Search, 
   FileDown, 
-  Plus, 
   Trash2,
-  ChevronRight,
   Info,
   DollarSign,
   Briefcase,
-  Sparkles
+  Sparkles,
+  Mail,
+  Upload,
+  Image as ImageIcon,
+  Edit2,
+  Loader2,
+  RefreshCw
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import jsPDF from "jspdf";
@@ -28,14 +30,34 @@ import "jspdf-autotable";
 import * as XLSX from "xlsx";
 import BookingCalendar from "./BookingCalendar";
 
-// Extend jsPDF with autotable types
-declare module "jspdf" {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
+type Tab = "overview" | "bookings" | "packages" | "designs" | "inquiries" | "calendar" | "pricing" | "settings";
+
+interface BridalPackage {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  includes: string[];
 }
 
-type Tab = "overview" | "bookings" | "calendar" | "pricing" | "settings";
+interface GuestDesign {
+  id: string;
+  name: string;
+  type: "Arabic" | "Indian";
+  price: number;
+  image: string;
+  description?: string;
+}
+
+interface Inquiry {
+  id: string;
+  name: string;
+  email: string;
+  mobile: string;
+  message: string;
+  createdAt: string;
+}
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -45,127 +67,329 @@ export default function AdminDashboard() {
   const [pricing, setPricing] = useState<any>(null);
   const [pricingDraft, setPricingDraft] = useState<any>(null);
   const [offers, setOffers] = useState<any[]>([]);
-  const [newOfferForm, setNewOfferForm] = useState({
-    title: "",
-    description: "",
-    code: "",
-    discountPercent: "10",
-  });
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [actionMessage, setActionMessage] = useState("");
 
+  // CRUD States
+  const [packages, setPackages] = useState<BridalPackage[]>([]);
+  const [designs, setDesigns] = useState<GuestDesign[]>([]);
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+
+  // Package Form State
+  const [editingPackageId, setEditingPackageId] = useState<string | null>(null);
+  const [packageForm, setPackageForm] = useState({
+    name: "",
+    description: "",
+    price: "",
+    image: "",
+    includesInput: ""
+  });
+  const [packageUploading, setPackageUploading] = useState(false);
+
+  // Design Form State
+  const [editingDesignId, setEditingDesignId] = useState<string | null>(null);
+  const [designForm, setDesignForm] = useState({
+    name: "",
+    type: "Arabic" as "Arabic" | "Indian",
+    price: "",
+    image: "",
+    description: ""
+  });
+  const [designUploading, setDesignUploading] = useState(false);
+
+  // Auto-clear success messages after 4 seconds
   useEffect(() => {
-    fetchDashboardData();
+    if (!actionMessage) return;
+    const timer = setTimeout(() => setActionMessage(""), 4000);
+    return () => clearTimeout(timer);
+  }, [actionMessage]);
+
+  /**
+   * Silently attempt to refresh the access token using the refresh_token cookie.
+   * Returns true if successful, false if the session is truly expired.
+   */
+  const tryRefreshToken = useCallback(async (): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/auth/refresh", { method: "POST" });
+      return res.ok;
+    } catch {
+      return false;
+    }
   }, []);
 
-  const fetchDashboardData = async () => {
+  /**
+   * Fetch wrapper that silently retries on 401 TOKEN_EXPIRED by refreshing first.
+   */
+  const authFetch = useCallback(
+    async (url: string, options?: RequestInit): Promise<Response> => {
+      const res = await fetch(url, options);
+
+      if (res.status === 401) {
+        const data = await res.clone().json().catch(() => ({}));
+        if (data?.code === "TOKEN_EXPIRED") {
+          const refreshed = await tryRefreshToken();
+          if (refreshed) {
+            // Retry the original request with the new token
+            return fetch(url, options);
+          }
+        }
+        // Not recoverable — redirect to login
+        router.push("/login");
+        throw new Error("Unauthorized");
+      }
+
+      return res;
+    },
+    [router, tryRefreshToken]
+  );
+
+  const fetchDashboardData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [bookRes, configRes] = await Promise.all([
-        fetch("/api/admin/bookings"),
-        fetch("/api/admin/config")
+      const [bookRes, configRes, packRes, desRes, inqRes] = await Promise.all([
+        authFetch("/api/admin/bookings"),
+        authFetch("/api/admin/config"),
+        fetch("/api/packages"),
+        fetch("/api/designs"),
+        authFetch("/api/inquiries")
       ]);
-
-      if (bookRes.status === 401 || configRes.status === 401) {
-        router.push("/admin/login");
-        return;
-      }
 
       const bookData = await bookRes.json();
       const configData = await configRes.json();
+      const packData = await packRes.json();
+      const desData = await desRes.json();
+      const inqData = await inqRes.json();
 
       setBookings(bookData.bookings || []);
       setBlockedDates(configData.blockedDates?.map((d: any) => d.date) || []);
       setPricing(configData.pricing);
       setPricingDraft(configData.pricing);
       setOffers(configData.offers || []);
-    } catch (err) {
-      console.error("Failed to load dashboard data", err);
+      setPackages(packData.packages || []);
+      setDesigns(desData.designs || []);
+      setInquiries(inqData.inquiries || []);
+    } catch (err: any) {
+      if (err?.message !== "Unauthorized") {
+        console.error("Failed to load dashboard data", err);
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [authFetch]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   const handleUpdateStatus = async (id: string, status: string) => {
     try {
-      const res = await fetch("/api/admin/bookings", {
+      const res = await authFetch("/api/admin/bookings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status })
       });
-      if (res.ok) fetchDashboardData();
-    } catch (err) {
-      console.error("Failed to update status", err);
+      if (res.ok) {
+        setActionMessage(`Booking status updated to ${status}`);
+        fetchDashboardData();
+      } else {
+        const data = await res.json();
+        setActionMessage(`Error: ${data.error || "Failed to update status"}`);
+      }
+    } catch (err: any) {
+      if (err?.message !== "Unauthorized") console.error("Failed to update status", err);
     }
   };
 
   const handleLogout = async () => {
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.push("/admin/login");
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // Proceed with redirect even if request fails
+    }
+    router.push("/login");
+    router.refresh();
   };
 
   const handleToggleBlockDate = async (date: string) => {
     try {
-      const res = await fetch("/api/admin/config", {
+      const res = await authFetch("/api/admin/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "toggle_block_date", date })
       });
-      if (res.ok) fetchDashboardData();
-    } catch (err) {
-      console.error("Failed to toggle blocked date", err);
+      if (res.ok) {
+        setActionMessage(`Date ${date} availability updated`);
+        fetchDashboardData();
+      }
+    } catch (err: any) {
+      if (err?.message !== "Unauthorized") console.error("Failed to toggle blocked date", err);
     }
   };
 
-  const handleSavePricing = async () => {
+  // Image Upload helper
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: "package" | "design") => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    if (target === "package") setPackageUploading(true);
+    else setDesignUploading(true);
+
     try {
-      if (!pricingDraft) return;
-      setActionMessage("");
-      const res = await fetch("/api/admin/config", {
+      const res = await fetch("/api/upload", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "update_pricing", pricing: pricingDraft }),
+        body: formData
       });
-      if (!res.ok) throw new Error("Unable to save pricing.");
-      setActionMessage("Pricing updated successfully.");
-      fetchDashboardData();
+      const data = await res.json();
+      if (res.ok && data.url) {
+        if (target === "package") {
+          setPackageForm(prev => ({ ...prev, image: data.url }));
+        } else {
+          setDesignForm(prev => ({ ...prev, image: data.url }));
+        }
+        setActionMessage("Image uploaded successfully");
+      } else {
+        alert(data.error || "Upload failed");
+      }
     } catch (err) {
-      console.error("Failed to save pricing", err);
+      console.error("Upload error:", err);
+      alert("Error uploading image");
+    } finally {
+      setPackageUploading(false);
+      setDesignUploading(false);
     }
   };
 
-  const handleAddOffer = async (e: React.FormEvent) => {
+  // ─── Package Actions ──────────────────────────────────────────────────────
+  const handleSavePackage = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!packageForm.name || !packageForm.description || !packageForm.price || !packageForm.image) {
+      alert("Please fill in all package details and upload an image.");
+      return;
+    }
+
+    const includes = packageForm.includesInput.split("\n").filter(i => i.trim() !== "");
+    const body = {
+      id: editingPackageId,
+      name: packageForm.name,
+      description: packageForm.description,
+      price: Number(packageForm.price),
+      image: packageForm.image,
+      includes
+    };
+
     try {
-      const res = await fetch("/api/admin/config", {
-        method: "POST",
+      const url = "/api/packages";
+      const method = editingPackageId ? "PATCH" : "POST";
+      const res = await authFetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "add_offer",
-          ...newOfferForm,
-        }),
+        body: JSON.stringify(body)
       });
-      if (!res.ok) throw new Error("Unable to add offer.");
-      setNewOfferForm({ title: "", description: "", code: "", discountPercent: "10" });
-      setActionMessage("Offer added successfully.");
-      fetchDashboardData();
-    } catch (err) {
-      console.error("Failed to add offer", err);
+
+      if (res.ok) {
+        setActionMessage(editingPackageId ? "Package updated successfully" : "New package created");
+        setPackageForm({ name: "", description: "", price: "", image: "", includesInput: "" });
+        setEditingPackageId(null);
+        fetchDashboardData();
+      } else {
+        const errData = await res.json();
+        alert(errData.error || "Save failed");
+      }
+    } catch (err: any) {
+      if (err?.message !== "Unauthorized") console.error(err);
     }
   };
 
-  const handleToggleOffer = async (id: string) => {
+  const handleEditPackage = (pkg: BridalPackage) => {
+    setEditingPackageId(pkg.id);
+    setPackageForm({
+      name: pkg.name,
+      description: pkg.description,
+      price: String(pkg.price),
+      image: pkg.image,
+      includesInput: (pkg.includes || []).join("\n")
+    });
+  };
+
+  const handleDeletePackage = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this package?")) return;
     try {
-      const res = await fetch("/api/admin/config", {
-        method: "POST",
+      const res = await authFetch(`/api/packages?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setActionMessage("Package deleted successfully");
+        fetchDashboardData();
+      }
+    } catch (err: any) {
+      if (err?.message !== "Unauthorized") console.error(err);
+    }
+  };
+
+  // ─── Design Actions ───────────────────────────────────────────────────────
+  const handleSaveDesign = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!designForm.name || !designForm.price || !designForm.image) {
+      alert("Please fill in all design details and upload an image.");
+      return;
+    }
+
+    const body = {
+      id: editingDesignId,
+      name: designForm.name,
+      type: designForm.type,
+      price: Number(designForm.price),
+      image: designForm.image,
+      description: designForm.description
+    };
+
+    try {
+      const url = "/api/designs";
+      const method = editingDesignId ? "PATCH" : "POST";
+      const res = await authFetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "toggle_offer", id }),
+        body: JSON.stringify(body)
       });
-      if (res.ok) fetchDashboardData();
-    } catch (err) {
-      console.error("Failed to toggle offer", err);
+
+      if (res.ok) {
+        setActionMessage(editingDesignId ? "Design updated successfully" : "New design created");
+        setDesignForm({ name: "", type: "Arabic", price: "", image: "", description: "" });
+        setEditingDesignId(null);
+        fetchDashboardData();
+      } else {
+        const errData = await res.json();
+        alert(errData.error || "Save failed");
+      }
+    } catch (err: any) {
+      if (err?.message !== "Unauthorized") console.error(err);
+    }
+  };
+
+  const handleEditDesign = (design: GuestDesign) => {
+    setEditingDesignId(design.id);
+    setDesignForm({
+      name: design.name,
+      type: design.type,
+      price: String(design.price),
+      image: design.image,
+      description: design.description || ""
+    });
+  };
+
+  const handleDeleteDesign = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this design?")) return;
+    try {
+      const res = await authFetch(`/api/designs?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setActionMessage("Design deleted successfully");
+        fetchDashboardData();
+      }
+    } catch (err: any) {
+      if (err?.message !== "Unauthorized") console.error(err);
     }
   };
 
@@ -199,14 +423,14 @@ export default function AdminDashboard() {
     });
   }, [bookings, searchTerm, statusFilter]);
 
-  // Export functions
+  // Exports
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.text("Chennai Mehendi Art - Bookings Report", 14, 15);
     const tableData = filteredBookings.map(b => [
       b.id, b.date, b.name, b.mobile, b.packageOrGuest, b.price, b.status
     ]);
-    doc.autoTable({
+    (doc as any).autoTable({
       head: [["ID", "Date", "Name", "Mobile", "Type", "Amount", "Status"]],
       body: tableData,
       startY: 25,
@@ -235,30 +459,31 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[#FDFCFB] flex flex-col md:flex-row overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-mehendi-darker text-white p-6 flex flex-col z-20">
-        <div className="flex items-center space-x-3 mb-10">
-          <Sparkles className="h-6 w-6 text-mehendi-gold" />
-          <h1 className="font-serif font-bold text-lg tracking-wide">Artist Admin</h1>
+      <aside className="w-full md:w-64 bg-mehendi-darker text-white p-6 flex flex-col z-20 shrink-0">
+        <div className="flex items-center space-x-3 mb-8">
+          <Sparkles className="h-6 w-6 text-mehendi-gold animate-pulse" />
+          <h1 className="font-serif font-bold text-lg tracking-wide text-white">Artist Admin</h1>
         </div>
 
-        <nav className="flex-grow space-y-2">
+        <nav className="flex-grow space-y-1">
           {[
-            { id: "overview", label: "Dashboard", icon: LayoutDashboard },
-            { id: "bookings", label: "Bookings", icon: Users },
-            { id: "calendar", label: "Calendar", icon: CalendarIcon },
-            { id: "pricing", label: "Pricing & Services", icon: Briefcase },
-            { id: "settings", label: "Settings", icon: Settings },
+            { id: "overview", label: "Overview Dashboard", icon: LayoutDashboard },
+            { id: "bookings", label: "Appointments Logs", icon: Users },
+            { id: "packages", label: "Manage Packages", icon: Briefcase },
+            { id: "designs", label: "Henna Designs", icon: Sparkles },
+            { id: "inquiries", label: "Customer Inquiries", icon: Mail },
+            { id: "calendar", label: "Availability Calendar", icon: CalendarIcon },
           ].map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id as Tab)}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
+              onClick={() => { setActiveTab(item.id as Tab); setActionMessage(""); }}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all text-xs font-semibold uppercase tracking-wider ${
                 activeTab === item.id 
                   ? "bg-mehendi-gold text-mehendi-darker font-bold shadow-lg" 
                   : "hover:bg-white/10 text-white/70"
               }`}
             >
-              <item.icon className="h-5 w-5" />
+              <item.icon className="h-4.5 w-4.5 shrink-0" />
               <span>{item.label}</span>
             </button>
           ))}
@@ -266,275 +491,587 @@ export default function AdminDashboard() {
 
         <button 
           onClick={handleLogout}
-          className="mt-auto flex items-center space-x-3 px-4 py-3 rounded-xl text-white/60 hover:text-red-400 hover:bg-red-400/10 transition-all"
+          className="mt-6 flex items-center space-x-3 px-4 py-3 rounded-xl text-xs uppercase font-bold tracking-wider text-white/60 hover:text-red-400 hover:bg-red-400/10 transition-all"
         >
-          <LogOut className="h-5 w-5" />
-          <span>Logout</span>
+          <LogOut className="h-4.5 w-4.5 shrink-0" />
+          <span>Logout Portal</span>
         </button>
       </aside>
 
-      {/* Main Content Area */}
+      {/* Main content */}
       <main className="flex-grow p-4 md:p-8 overflow-y-auto h-screen relative">
-        <div className="absolute top-0 right-0 p-8 pointer-events-none opacity-5">
-          <svg width="400" height="400" viewBox="0 0 100 100" fill="#355E3B">
-            <path d="M50 0C22.4 0 0 22.4 0 50s22.4 50 50 50 50-22.4 50-50S77.6 0 50 0zm0 94C25.7 94 6 74.3 6 50S25.7 6 50 6s44 19.7 44 44-19.7 44-44 44z" />
-          </svg>
-        </div>
-
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 border-b border-mehendi-gold/10 pb-4">
           <div>
-            <h2 className="text-2xl font-serif font-bold text-mehendi-darker capitalize">{activeTab}</h2>
-            <p className="text-sm text-mehendi-olive font-light">Management Portal • {new Date().toLocaleDateString('en-IN', { dateStyle: 'full' })}</p>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-             <div className="hidden sm:flex flex-col text-right">
-                <span className="text-sm font-bold text-mehendi-darker">Chennai Mehendi Art</span>
-                <span className="text-[10px] uppercase text-mehendi-gold tracking-widest">Main Branch</span>
-             </div>
-             <div className="h-10 w-10 rounded-full bg-mehendi-gold/20 border border-mehendi-gold flex items-center justify-center">
-                <Users className="h-5 w-5 text-mehendi-dark" />
-             </div>
+            <h2 className="text-2xl font-serif font-bold text-mehendi-darker capitalize">
+              {activeTab === "overview" && "System Overview"}
+              {activeTab === "bookings" && "Appointments Ledger"}
+              {activeTab === "packages" && "Service Packages Administration"}
+              {activeTab === "designs" && "Henna Art Collections"}
+              {activeTab === "inquiries" && "Customer Inquiry Inbox"}
+              {activeTab === "calendar" && "Studio Calendar Slots"}
+            </h2>
+            <p className="text-xs text-mehendi-olive font-light tracking-wide mt-1">
+              Chennai Mehendi Art Portal • {new Date().toLocaleDateString('en-IN', { dateStyle: 'full' })}
+            </p>
           </div>
         </header>
 
         {actionMessage && (
-          <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-            {actionMessage}
+          <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 px-4 py-3.5 text-xs text-green-800 font-semibold flex items-center justify-between gap-3">
+            <span>✅ {actionMessage}</span>
+            <button
+              onClick={() => setActionMessage("")}
+              className="text-green-600 hover:text-green-800 transition-colors text-xs font-bold shrink-0"
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
           </div>
         )}
 
         <AnimatePresence mode="wait">
+          {/* TAB 1: OVERVIEW */}
           {activeTab === "overview" && (
             <motion.div 
               key="overview"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              exit={{ opacity: 0, y: -15 }}
               className="space-y-6"
             >
-              {/* Stat Cards */}
+              {/* Stats widgets */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                  { label: "Revenue Estimate", val: `₹${stats.revenue}`, icon: DollarSign, color: "bg-green-100 text-green-700" },
-                  { label: "Total Bookings", val: stats.total, icon: Users, color: "bg-blue-100 text-blue-700" },
-                  { label: "Upcoming Events", val: stats.upcoming, icon: CalendarIcon, color: "bg-amber-100 text-amber-700" },
-                  { label: "Pending Review", val: stats.pending, icon: Clock, color: "bg-purple-100 text-purple-700" },
+                  { label: "Bookings Revenue", val: `₹${stats.revenue}`, icon: DollarSign, color: "bg-green-100 text-green-700 border border-green-200" },
+                  { label: "Total Schedules", val: stats.total, icon: Users, color: "bg-blue-100 text-blue-700 border border-blue-200" },
+                  { label: "Confirmed Events", val: stats.upcoming, icon: CalendarIcon, color: "bg-amber-100 text-amber-700 border border-amber-200" },
+                  { label: "Reviews Pending", val: stats.pending, icon: Clock, color: "bg-purple-100 text-purple-700 border border-purple-200" },
                 ].map((stat, i) => (
-                  <div key={i} className="bg-white p-6 rounded-3xl shadow-sm border border-mehendi-gold/10 flex items-center space-x-4">
-                    <div className={`p-3 rounded-2xl ${stat.color}`}>
+                  <div key={i} className="bg-white p-6 rounded-3xl shadow-sm border border-mehendi-gold/15 flex items-center space-x-4">
+                    <div className={`p-3.5 rounded-2xl ${stat.color}`}>
                       <stat.icon className="h-6 w-6" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">{stat.label}</p>
-                      <p className="text-2xl font-serif font-bold text-mehendi-darker">{stat.val}</p>
+                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{stat.label}</p>
+                      <p className="text-xl sm:text-2xl font-serif font-bold text-mehendi-darker mt-0.5">{stat.val}</p>
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Quick Actions & Recent */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <div className="lg:col-span-8 bg-white p-6 rounded-3xl shadow-sm border border-mehendi-gold/10">
-                  <h3 className="font-serif font-bold text-lg text-mehendi-darker mb-6">Recent Pending Bookings</h3>
-                  <div className="space-y-4">
-                    {bookings.filter(b => b.status === "pending").slice(0, 5).length > 0 ? (
-                      bookings.filter(b => b.status === "pending").slice(0, 5).map((booking) => (
-                        <div key={booking.id} className="flex items-center justify-between p-4 bg-mehendi-bg/20 rounded-2xl border border-transparent hover:border-mehendi-gold/20 transition-all">
-                          <div className="flex items-center space-x-4">
-                            <div className="h-10 w-10 rounded-full bg-mehendi-dark/10 flex items-center justify-center font-bold text-mehendi-dark">
-                              {booking.name.charAt(0)}
-                            </div>
-                            <div>
-                              <p className="font-bold text-sm text-mehendi-darker">{booking.name}</p>
-                              <p className="text-[10px] text-gray-500">{booking.date} • {booking.packageName || booking.designType}</p>
-                            </div>
-                          </div>
-                          <div className="flex space-x-2">
-                            <button 
-                              onClick={() => handleUpdateStatus(booking.id, "accepted")}
-                              className="p-2 rounded-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm"
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </button>
-                            <button 
-                              onClick={() => handleUpdateStatus(booking.id, "rejected")}
-                              className="p-2 rounded-full bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm"
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </button>
-                          </div>
+              {/* Recent Pending Table */}
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-mehendi-gold/15">
+                <h3 className="font-serif font-bold text-lg text-mehendi-darker mb-6 border-b border-mehendi-gold/10 pb-3 flex items-center space-x-2">
+                  <Clock className="h-5 w-5 text-mehendi-gold" />
+                  <span>Pending Customer Booking Reviews</span>
+                </h3>
+                <div className="space-y-3.5">
+                  {bookings.filter(b => b.status === "pending").length > 0 ? (
+                    bookings.filter(b => b.status === "pending").slice(0, 5).map((booking) => (
+                      <div key={booking.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-mehendi-bg/10 rounded-2xl border border-mehendi-gold/10 gap-4">
+                        <div>
+                          <p className="font-bold text-sm text-mehendi-darker">{booking.name} ({booking.mobile})</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Date: <strong>{booking.date}</strong> | Slot: {booking.timeSlot} | Selected: <strong>{booking.packageName || `${booking.designType} (${booking.subDesignName})`}</strong>
+                          </p>
                         </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-10">
-                        <CheckCircle className="h-12 w-12 text-mehendi-gold mx-auto mb-4 opacity-20" />
-                        <p className="text-sm text-gray-400">All caught up! No pending bookings.</p>
+                        <div className="flex space-x-2 w-full sm:w-auto shrink-0 justify-end">
+                          <button 
+                            onClick={() => handleUpdateStatus(booking.id, "accepted")}
+                            className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-xs uppercase transition-all shadow-md"
+                          >
+                            <CheckCircle className="h-3.5 w-3.5" />
+                            <span>Accept</span>
+                          </button>
+                          <button 
+                            onClick={() => handleUpdateStatus(booking.id, "rejected")}
+                            className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-xs uppercase transition-all shadow-md"
+                          >
+                            <XCircle className="h-3.5 w-3.5" />
+                            <span>Reject</span>
+                          </button>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="lg:col-span-4 bg-mehendi-darker p-6 rounded-3xl shadow-xl text-white overflow-hidden relative">
-                   <div className="absolute top-0 right-0 p-4 opacity-10">
-                      <TrendingUp size={100} />
-                   </div>
-                   <h3 className="font-serif font-bold text-lg mb-4 text-mehendi-gold">Quick Statistics</h3>
-                   <div className="space-y-6 relative z-10">
-                      <div className="flex justify-between items-center">
-                         <span className="text-white/60 text-sm">Acceptance Rate</span>
-                         <span className="font-bold text-lg">{Math.round((stats.accepted / (stats.total || 1)) * 100)}%</span>
-                      </div>
-                      <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
-                         <div className="bg-mehendi-gold h-full" style={{ width: `${(stats.accepted / (stats.total || 1)) * 100}%` }} />
-                      </div>
-                      <div className="pt-4 border-t border-white/10">
-                         <p className="text-xs text-white/50 mb-2 uppercase tracking-widest">Next Major Event</p>
-                         {bookings.filter(b => b.status === "accepted").sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0] ? (
-                            <div className="flex items-center space-x-3">
-                               <div className="bg-white/10 p-2 rounded-lg">
-                                  <CalendarIcon className="h-5 w-5 text-mehendi-gold" />
-                               </div>
-                               <div>
-                                  <p className="font-bold text-sm">{bookings.filter(b => b.status === "accepted").sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0].date}</p>
-                                  <p className="text-[10px] text-white/60">{bookings.filter(b => b.status === "accepted").sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0].name}</p>
-                               </div>
-                            </div>
-                         ) : (
-                           <p className="text-sm text-white/40 italic">No upcoming events scheduled</p>
-                         )}
-                      </div>
-                   </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-12">
+                      <CheckCircle className="h-10 w-10 text-mehendi-gold/40 mx-auto mb-3" />
+                      <p className="text-sm text-gray-400 font-light">All caught up! No bookings pending your approval review.</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>
           )}
 
+          {/* TAB 2: BOOKINGS */}
           {activeTab === "bookings" && (
             <motion.div 
               key="bookings"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               className="space-y-6"
             >
-              {/* Filters Toolbar */}
-              <div className="bg-white p-4 rounded-3xl shadow-sm border border-mehendi-gold/10 flex flex-col md:flex-row gap-4 items-center">
-                 <div className="relative flex-grow w-full">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input 
-                      type="text" 
-                      placeholder="Search customer name, ID or phone..." 
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-11 pr-4 py-2.5 rounded-2xl border border-gray-100 focus:border-mehendi-gold focus:ring-1 focus:ring-mehendi-gold outline-none text-sm"
-                    />
-                 </div>
-                 <select 
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full md:w-auto px-4 py-2.5 rounded-2xl border border-gray-100 focus:border-mehendi-gold outline-none text-sm bg-white"
-                 >
-                    <option value="all">All Statuses</option>
-                    <option value="pending">Pending</option>
-                    <option value="accepted">Accepted</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="cancelled">Cancelled</option>
-                 </select>
-                 <div className="flex space-x-2">
-                    <button 
-                      onClick={exportToExcel}
-                      className="p-2.5 rounded-2xl bg-mehendi-bg text-mehendi-dark hover:bg-mehendi-dark hover:text-white transition-all border border-mehendi-gold/20"
-                      title="Export to Excel"
-                    >
-                       <FileDown className="h-5 w-5" />
-                    </button>
-                    <button 
-                      onClick={exportToPDF}
-                      className="p-2.5 rounded-2xl bg-mehendi-bg text-mehendi-dark hover:bg-mehendi-dark hover:text-white transition-all border border-mehendi-gold/20"
-                      title="Export to PDF"
-                    >
-                       <FileDown className="h-5 w-5" />
-                    </button>
-                 </div>
+              {/* Search filter toolbar */}
+              <div className="bg-white p-4 rounded-3xl border border-mehendi-gold/15 shadow-sm flex flex-col md:flex-row gap-4 items-center">
+                <div className="relative flex-grow w-full">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input 
+                    type="text" 
+                    placeholder="Search name, ID or mobile..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-11 pr-4 py-2.5 rounded-2xl border border-gray-100 focus:border-mehendi-gold outline-none text-sm"
+                  />
+                </div>
+                <select 
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full md:w-auto px-4 py-2.5 rounded-2xl border border-gray-100 outline-none text-sm bg-white focus:border-mehendi-gold"
+                >
+                  <option value="all">All Booking Statuses</option>
+                  <option value="pending">Pending Review</option>
+                  <option value="accepted">Approved / Scheduled</option>
+                  <option value="completed">Completed</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+                <div className="flex space-x-2 shrink-0">
+                  <button onClick={exportToExcel} className="p-2.5 rounded-2xl bg-mehendi-bg text-mehendi-dark hover:bg-mehendi-dark hover:text-white transition-all border border-mehendi-gold/20" title="Export Excel">
+                    <FileDown className="h-4.5 w-4.5" />
+                  </button>
+                  <button onClick={exportToPDF} className="p-2.5 rounded-2xl bg-mehendi-bg text-mehendi-dark hover:bg-mehendi-dark hover:text-white transition-all border border-mehendi-gold/20" title="Export PDF">
+                    <FileDown className="h-4.5 w-4.5" />
+                  </button>
+                </div>
               </div>
 
-              {/* Table */}
-              <div className="bg-white rounded-3xl shadow-sm border border-mehendi-gold/10 overflow-hidden">
-                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                       <thead className="bg-mehendi-bg/30 text-mehendi-darker text-[10px] uppercase tracking-widest font-bold">
-                          <tr>
-                             <th className="px-6 py-4">Customer</th>
-                             <th className="px-6 py-4">Event Date</th>
-                             <th className="px-6 py-4">Service</th>
-                             <th className="px-6 py-4">Amount</th>
-                             <th className="px-6 py-4">Status</th>
-                             <th className="px-6 py-4 text-right">Actions</th>
-                          </tr>
-                       </thead>
-                       <tbody className="divide-y divide-gray-50">
-                          {filteredBookings.length > 0 ? filteredBookings.map((b) => (
-                             <tr key={b.id} className="hover:bg-mehendi-bg/5 transition-all group">
-                                <td className="px-6 py-4">
-                                   <div className="flex items-center space-x-3">
-                                      <div className="h-8 w-8 rounded-full bg-mehendi-dark/5 flex items-center justify-center text-xs font-bold text-mehendi-dark">
-                                         {b.name.charAt(0)}
-                                      </div>
-                                      <div>
-                                         <p className="text-sm font-bold text-mehendi-darker">{b.name}</p>
-                                         <p className="text-[10px] text-gray-400">{b.id}</p>
-                                      </div>
-                                   </div>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-600">{b.date}</td>
-                                <td className="px-6 py-4 text-xs text-gray-500 font-medium">
-                                   {b.packageName || `${b.designType} (${b.subDesignName})`}
-                                </td>
-                                <td className="px-6 py-4 font-serif font-bold text-mehendi-dark">₹{b.price}</td>
-                                <td className="px-6 py-4">
-                                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                                      b.status === "accepted" ? "bg-green-50 text-green-600 border border-green-100" :
-                                      b.status === "pending" ? "bg-amber-50 text-amber-600 border border-amber-100" :
-                                      "bg-red-50 text-red-600 border border-red-100"
-                                   }`}>
-                                      {b.status}
-                                   </span>
-                                </td>
-                                <td className="px-6 py-4 text-right">
-                                   <div className="flex items-center justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      {b.status === "pending" && (
-                                        <button 
-                                          onClick={() => handleUpdateStatus(b.id, "accepted")}
-                                          className="p-1.5 rounded-lg text-green-600 hover:bg-green-50"
-                                        >
-                                           <CheckCircle className="h-4 w-4" />
-                                        </button>
-                                      )}
-                                      <button 
-                                        onClick={() => handleUpdateStatus(b.id, "cancelled")}
-                                        className="p-1.5 rounded-lg text-red-400 hover:bg-red-50"
-                                      >
-                                         <XCircle className="h-4 w-4" />
-                                      </button>
-                                      <button className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-50">
-                                         <ChevronRight className="h-4 w-4" />
-                                      </button>
-                                   </div>
-                                </td>
-                             </tr>
-                          )) : (
-                            <tr>
-                               <td colSpan={6} className="px-6 py-20 text-center text-gray-400 text-sm">No bookings found matching your search.</td>
-                            </tr>
-                          )}
-                       </tbody>
-                    </table>
-                 </div>
+              {/* Data Table */}
+              <div className="bg-white rounded-3xl border border-mehendi-gold/15 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="bg-mehendi-bg/30 text-[10px] uppercase font-bold tracking-widest text-mehendi-darker">
+                      <tr>
+                        <th className="px-6 py-4">Customer Info</th>
+                        <th className="px-6 py-4">Booking Date</th>
+                        <th className="px-6 py-4">Event Occasion</th>
+                        <th className="px-6 py-4">Design selection</th>
+                        <th className="px-6 py-4">Price</th>
+                        <th className="px-6 py-4">Status</th>
+                        <th className="px-6 py-4 text-right">Review Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 text-sm">
+                      {filteredBookings.length > 0 ? filteredBookings.map((b) => (
+                        <tr key={b.id} className="hover:bg-mehendi-bg/5 transition-all">
+                          <td className="px-6 py-4">
+                            <p className="font-bold text-mehendi-darker">{b.name}</p>
+                            <p className="text-[10px] text-gray-500 font-mono">{b.email} • {b.mobile}</p>
+                          </td>
+                          <td className="px-6 py-4 font-semibold text-gray-600">{b.date} ({b.timeSlot})</td>
+                          <td className="px-6 py-4 text-xs font-semibold text-mehendi-olive">{b.eventType}</td>
+                          <td className="px-6 py-4 text-xs font-light max-w-[200px] truncate">{b.packageName || `${b.designType} Style - ${b.subDesignName}`}</td>
+                          <td className="px-6 py-4 font-serif font-bold text-mehendi-dark">₹{b.price}</td>
+                          <td className="px-6 py-4">
+                            <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
+                              b.status === "accepted" ? "bg-green-50 text-green-600 border border-green-200" :
+                              b.status === "pending" ? "bg-amber-50 text-amber-600 border border-amber-200" :
+                              "bg-red-50 text-red-500 border border-red-200"
+                            }`}>
+                              {b.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex justify-end space-x-1.5">
+                              {b.status === "pending" && (
+                                <button onClick={() => handleUpdateStatus(b.id, "accepted")} className="p-1 rounded-xl bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-all">
+                                  <CheckCircle className="h-4 w-4" />
+                                </button>
+                              )}
+                              {b.status !== "rejected" && b.status !== "cancelled" && (
+                                <button onClick={() => handleUpdateStatus(b.id, "rejected")} className="p-1 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all">
+                                  <XCircle className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )) : (
+                        <tr>
+                          <td colSpan={7} className="px-6 py-20 text-center text-gray-400 font-light">No customer bookings found.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </motion.div>
           )}
 
+          {/* TAB 3: PACKAGES CRUD */}
+          {activeTab === "packages" && (
+            <motion.div 
+              key="packages"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="grid grid-cols-1 lg:grid-cols-12 gap-8"
+            >
+              {/* Left Column: Form panel */}
+              <div className="lg:col-span-5 bg-white p-6 sm:p-8 rounded-3xl border border-mehendi-gold/15 shadow-sm h-fit">
+                <h3 className="font-serif font-bold text-lg text-mehendi-darker mb-5 flex items-center space-x-2 border-b border-mehendi-gold/10 pb-3">
+                  <Sparkles className="h-4.5 w-4.5 text-mehendi-gold" />
+                  <span>{editingPackageId ? "Edit Package Details" : "Create New Bridal Package"}</span>
+                </h3>
+
+                <form onSubmit={handleSavePackage} className="space-y-4">
+                  <div className="flex flex-col space-y-1">
+                    <label className="text-[10px] font-bold text-mehendi-darker uppercase tracking-wider">Package Title *</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="e.g. Bridal Package 1"
+                      value={packageForm.name}
+                      onChange={(e) => setPackageForm(prev => ({ ...prev, name: e.target.value }))}
+                      className="px-4 py-2.5 rounded-xl border border-gray-150 focus:border-mehendi-gold outline-none text-sm"
+                    />
+                  </div>
+
+                  <div className="flex flex-col space-y-1">
+                    <label className="text-[10px] font-bold text-mehendi-darker uppercase tracking-wider">Base Price (INR) *</label>
+                    <input 
+                      type="number" 
+                      required
+                      placeholder="e.g. 3500"
+                      value={packageForm.price}
+                      onChange={(e) => setPackageForm(prev => ({ ...prev, price: e.target.value }))}
+                      className="px-4 py-2.5 rounded-xl border border-gray-150 focus:border-mehendi-gold outline-none text-sm font-semibold text-mehendi-dark"
+                    />
+                  </div>
+
+                  <div className="flex flex-col space-y-1">
+                    <label className="text-[10px] font-bold text-mehendi-darker uppercase tracking-wider">Brief Description *</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="e.g. Both hands front and back till elbow"
+                      value={packageForm.description}
+                      onChange={(e) => setPackageForm(prev => ({ ...prev, description: e.target.value }))}
+                      className="px-4 py-2.5 rounded-xl border border-gray-150 focus:border-mehendi-gold outline-none text-sm"
+                    />
+                  </div>
+
+                  <div className="flex flex-col space-y-1">
+                    <label className="text-[10px] font-bold text-mehendi-darker uppercase tracking-wider">Included Features (One per line)</label>
+                    <textarea 
+                      rows={4}
+                      placeholder="Elbow-length coverage&#10;Traditional details&#10;Custom style"
+                      value={packageForm.includesInput}
+                      onChange={(e) => setPackageForm(prev => ({ ...prev, includesInput: e.target.value }))}
+                      className="px-4 py-2.5 rounded-xl border border-gray-150 focus:border-mehendi-gold outline-none text-sm"
+                    />
+                  </div>
+
+                  {/* Photo upload field */}
+                  <div className="flex flex-col space-y-2">
+                    <label className="text-[10px] font-bold text-mehendi-darker uppercase tracking-wider">Design photo *</label>
+                    <div className="flex items-center space-x-3">
+                      {packageForm.image ? (
+                        <div className="h-16 w-16 rounded-xl border border-mehendi-gold/20 overflow-hidden relative shrink-0">
+                          <img src={packageForm.image} alt="Uploaded" className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="h-16 w-16 rounded-xl border border-dashed border-gray-300 flex items-center justify-center text-gray-400 shrink-0">
+                          <ImageIcon className="h-6 w-6" />
+                        </div>
+                      )}
+                      
+                      <label className="flex-grow flex items-center justify-center border border-dashed border-mehendi-gold/30 rounded-xl p-4 bg-mehendi-bg/15 hover:bg-mehendi-bg/35 transition-all cursor-pointer relative">
+                        {packageUploading ? (
+                          <Loader2 className="h-5 w-5 text-mehendi-gold animate-spin" />
+                        ) : (
+                          <div className="flex items-center space-x-2 text-xs font-bold text-mehendi-dark uppercase tracking-wider">
+                            <Upload className="h-4 w-4" />
+                            <span>Upload Image</span>
+                          </div>
+                        )}
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, "package")}
+                          className="hidden" 
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 flex gap-2">
+                    {editingPackageId && (
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setEditingPackageId(null);
+                          setPackageForm({ name: "", description: "", price: "", image: "", includesInput: "" });
+                        }}
+                        className="w-1/2 py-3.5 rounded-xl border border-gray-200 text-gray-600 text-xs font-bold uppercase tracking-wider hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    <button 
+                      type="submit"
+                      className="flex-grow py-3.5 bg-mehendi-dark text-white rounded-xl text-xs uppercase font-bold tracking-wider hover:opacity-95 shadow-md"
+                    >
+                      {editingPackageId ? "Update package" : "Create package"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Right Column: Dynamic listing grid */}
+              <div className="lg:col-span-7 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {packages.map((pkg) => (
+                    <div key={pkg.id} className="bg-white rounded-3xl border border-mehendi-gold/15 overflow-hidden flex flex-col justify-between shadow-sm relative group hover:shadow-md transition-all">
+                      <div className="aspect-[4/3] w-full overflow-hidden relative shrink-0">
+                        <img src={pkg.image} alt={pkg.name} className="w-full h-full object-cover" />
+                        <div className="absolute top-3 right-3 flex space-x-1.5">
+                          <button 
+                            onClick={() => handleEditPackage(pkg)}
+                            className="p-2 rounded-full bg-white text-mehendi-dark shadow-md hover:bg-mehendi-dark hover:text-white transition-all"
+                            title="Edit Package"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                          </button>
+                          <button 
+                            onClick={() => handleDeletePackage(pkg.id)}
+                            className="p-2 rounded-full bg-white text-red-500 shadow-md hover:bg-red-500 hover:text-white transition-all"
+                            title="Delete Package"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="p-5 flex-grow flex flex-col justify-between">
+                        <div>
+                          <h4 className="font-serif font-bold text-mehendi-darker text-base">{pkg.name}</h4>
+                          <p className="text-xs text-gray-500 mt-1 font-light italic">{pkg.description}</p>
+                        </div>
+                        <div className="pt-4 border-t border-gray-50 flex items-center justify-between mt-4">
+                          <span className="text-[10px] text-gray-400 uppercase font-semibold">Pricing rate</span>
+                          <span className="font-serif font-bold text-mehendi-dark text-lg">₹{pkg.price}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* TAB 4: DESIGNS CRUD */}
+          {activeTab === "designs" && (
+            <motion.div 
+              key="designs"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="grid grid-cols-1 lg:grid-cols-12 gap-8"
+            >
+              {/* Form Column */}
+              <div className="lg:col-span-5 bg-white p-6 sm:p-8 rounded-3xl border border-mehendi-gold/15 shadow-sm h-fit">
+                <h3 className="font-serif font-bold text-lg text-mehendi-darker mb-5 flex items-center space-x-2 border-b border-mehendi-gold/10 pb-3">
+                  <Sparkles className="h-4.5 w-4.5 text-mehendi-gold" />
+                  <span>{editingDesignId ? "Modify Design collection" : "Add Guest Design item"}</span>
+                </h3>
+
+                <form onSubmit={handleSaveDesign} className="space-y-4">
+                  <div className="flex flex-col space-y-1">
+                    <label className="text-[10px] font-bold text-mehendi-darker uppercase tracking-wider">Design Title *</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="e.g. Palm Arabic Design"
+                      value={designForm.name}
+                      onChange={(e) => setDesignForm(prev => ({ ...prev, name: e.target.value }))}
+                      className="px-4 py-2.5 rounded-xl border border-gray-150 focus:border-mehendi-gold outline-none text-sm"
+                    />
+                  </div>
+
+                  <div className="flex flex-col space-y-1">
+                    <label className="text-[10px] font-bold text-mehendi-darker uppercase tracking-wider">Collection Category *</label>
+                    <select 
+                      value={designForm.type}
+                      onChange={(e) => setDesignForm(prev => ({ ...prev, type: e.target.value as any }))}
+                      className="px-4 py-2.5 rounded-xl border border-gray-150 focus:border-mehendi-gold outline-none text-sm bg-white"
+                    >
+                      <option value="Arabic">Arabic Designs</option>
+                      <option value="Indian">Traditional Indian Designs</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col space-y-1">
+                    <label className="text-[10px] font-bold text-mehendi-darker uppercase tracking-wider">Price (INR per hand) *</label>
+                    <input 
+                      type="number" 
+                      required
+                      placeholder="e.g. 100"
+                      value={designForm.price}
+                      onChange={(e) => setDesignForm(prev => ({ ...prev, price: e.target.value }))}
+                      className="px-4 py-2.5 rounded-xl border border-gray-150 focus:border-mehendi-gold outline-none text-sm font-semibold text-mehendi-dark"
+                    />
+                  </div>
+
+                  <div className="flex flex-col space-y-1">
+                    <label className="text-[10px] font-bold text-mehendi-darker uppercase tracking-wider">Description</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Clean spaced motifs"
+                      value={designForm.description}
+                      onChange={(e) => setDesignForm(prev => ({ ...prev, description: e.target.value }))}
+                      className="px-4 py-2.5 rounded-xl border border-gray-150 focus:border-mehendi-gold outline-none text-sm"
+                    />
+                  </div>
+
+                  <div className="flex flex-col space-y-2">
+                    <label className="text-[10px] font-bold text-mehendi-darker uppercase tracking-wider">Henna design photo *</label>
+                    <div className="flex items-center space-x-3">
+                      {designForm.image ? (
+                        <div className="h-16 w-16 rounded-xl border border-mehendi-gold/20 overflow-hidden relative shrink-0">
+                          <img src={designForm.image} alt="Uploaded" className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="h-16 w-16 rounded-xl border border-dashed border-gray-300 flex items-center justify-center text-gray-400 shrink-0">
+                          <ImageIcon className="h-6 w-6" />
+                        </div>
+                      )}
+                      
+                      <label className="flex-grow flex items-center justify-center border border-dashed border-mehendi-gold/30 rounded-xl p-4 bg-mehendi-bg/15 hover:bg-mehendi-bg/35 transition-all cursor-pointer relative">
+                        {designUploading ? (
+                          <Loader2 className="h-5 w-5 text-mehendi-gold animate-spin" />
+                        ) : (
+                          <div className="flex items-center space-x-2 text-xs font-bold text-mehendi-dark uppercase tracking-wider">
+                            <Upload className="h-4 w-4" />
+                            <span>Upload Image</span>
+                          </div>
+                        )}
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, "design")}
+                          className="hidden" 
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 flex gap-2">
+                    {editingDesignId && (
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setEditingDesignId(null);
+                          setDesignForm({ name: "", type: "Arabic", price: "", image: "", description: "" });
+                        }}
+                        className="w-1/2 py-3.5 rounded-xl border border-gray-200 text-gray-600 text-xs font-bold uppercase tracking-wider hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    <button 
+                      type="submit"
+                      className="flex-grow py-3.5 bg-mehendi-dark text-white rounded-xl text-xs uppercase font-bold tracking-wider hover:opacity-95 shadow-md"
+                    >
+                      {editingDesignId ? "Update design" : "Add design"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Collections Grid */}
+              <div className="lg:col-span-7 space-y-6">
+                <div>
+                  <h4 className="font-serif font-bold text-base text-mehendi-darker mb-4 border-b border-mehendi-gold/10 pb-2">Arabic Collection</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {designs.filter(d => d.type === "Arabic").map(design => (
+                      <div key={design.id} className="bg-white border border-mehendi-gold/10 rounded-2xl overflow-hidden relative shadow-sm hover:shadow-md transition-all">
+                        <div className="aspect-[3/4] relative overflow-hidden">
+                          <img src={design.image} alt={design.name} className="w-full h-full object-cover" />
+                          <div className="absolute top-2 right-2 flex space-x-1">
+                            <button onClick={() => handleEditDesign(design)} className="p-1.5 rounded-full bg-white text-mehendi-dark shadow-sm hover:bg-mehendi-dark hover:text-white transition-all"><Edit2 className="h-3.5 w-3.5" /></button>
+                            <button onClick={() => handleDeleteDesign(design.id)} className="p-1.5 rounded-full bg-white text-red-500 shadow-sm hover:bg-red-500 hover:text-white transition-all"><Trash2 className="h-3.5 w-3.5" /></button>
+                          </div>
+                        </div>
+                        <div className="p-3 text-center">
+                          <p className="font-bold text-xs text-mehendi-darker truncate">{design.name}</p>
+                          <p className="font-serif font-bold text-mehendi-gold text-sm mt-1">₹{design.price}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-serif font-bold text-base text-mehendi-darker mb-4 border-b border-mehendi-gold/10 pb-2">Traditional Indian Collection</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {designs.filter(d => d.type === "Indian").map(design => (
+                      <div key={design.id} className="bg-white border border-mehendi-gold/10 rounded-2xl overflow-hidden relative shadow-sm hover:shadow-md transition-all">
+                        <div className="aspect-[3/4] relative overflow-hidden">
+                          <img src={design.image} alt={design.name} className="w-full h-full object-cover" />
+                          <div className="absolute top-2 right-2 flex space-x-1">
+                            <button onClick={() => handleEditDesign(design)} className="p-1.5 rounded-full bg-white text-mehendi-dark shadow-sm hover:bg-mehendi-dark hover:text-white transition-all"><Edit2 className="h-3.5 w-3.5" /></button>
+                            <button onClick={() => handleDeleteDesign(design.id)} className="p-1.5 rounded-full bg-white text-red-500 shadow-sm hover:bg-red-500 hover:text-white transition-all"><Trash2 className="h-3.5 w-3.5" /></button>
+                          </div>
+                        </div>
+                        <div className="p-3 text-center">
+                          <p className="font-bold text-xs text-mehendi-darker truncate">{design.name}</p>
+                          <p className="font-serif font-bold text-mehendi-gold text-sm mt-1">₹{design.price}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* TAB 5: INQUIRIES LISTING */}
+          {activeTab === "inquiries" && (
+            <motion.div 
+              key="inquiries"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="space-y-4"
+            >
+              {inquiries.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {inquiries.map((inq) => (
+                    <div key={inq.id} className="bg-white p-6 rounded-3xl border border-mehendi-gold/15 shadow-sm space-y-3 relative">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-serif font-bold text-mehendi-darker text-base">{inq.name}</h4>
+                          <p className="text-xs text-mehendi-olive font-light font-mono mt-0.5">{inq.email} • {inq.mobile}</p>
+                        </div>
+                        <span className="text-[10px] text-gray-400 font-light">
+                          {new Date(inq.createdAt).toLocaleDateString('en-IN', { dateStyle: 'short' })}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-600 bg-mehendi-bg/15 p-3.5 rounded-2xl italic leading-relaxed border border-mehendi-gold/5">
+                        "{inq.message}"
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-20 bg-white rounded-3xl border border-mehendi-gold/10">
+                  <Mail className="h-10 w-10 text-mehendi-gold/30 mx-auto mb-3" />
+                  <p className="text-sm text-gray-400 font-light">Your inquiry inbox is empty. No messages submitted from contact page.</p>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* TAB 6: CALENDAR */}
           {activeTab === "calendar" && (
             <motion.div 
               key="calendar"
@@ -543,183 +1080,45 @@ export default function AdminDashboard() {
               exit={{ opacity: 0, scale: 1.02 }}
               className="grid grid-cols-1 lg:grid-cols-12 gap-8"
             >
-               <div className="lg:col-span-8">
-                  <BookingCalendar 
-                    selectedDate=""
-                    onSelectDate={handleToggleBlockDate}
-                    blockedDates={blockedDates}
-                    loadingBlocked={false}
-                  />
-                  <div className="mt-6 bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-start space-x-3">
-                     <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                     <p className="text-xs text-amber-800 leading-relaxed">
-                        <strong>Artist Tip:</strong> Clicking an available date in the calendar above will mark it as "Blocked" (for holidays or personal events). Clicking a blocked date will unblock it. Existing customer bookings are automatically marked as unavailable.
-                     </p>
-                  </div>
-               </div>
-               
-               <div className="lg:col-span-4 space-y-6">
-                  <div className="bg-white p-6 rounded-3xl shadow-sm border border-mehendi-gold/10">
-                     <h3 className="font-serif font-bold text-lg text-mehendi-darker mb-4">Upcoming Schedule</h3>
-                     <div className="space-y-4">
-                        {bookings.filter(b => {
-                           const bDate = new Date(b.date);
-                           const today = new Date();
-                           today.setHours(0,0,0,0);
-                           return bDate >= today && b.status === "accepted";
-                        }).sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).slice(0, 5).map(b => (
-                           <div key={b.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-2xl">
-                              <div className="bg-mehendi-dark text-white px-3 py-1.5 rounded-xl text-center min-w-[50px]">
-                                 <p className="text-[10px] uppercase font-bold">{new Date(b.date).toLocaleDateString('en-US', { month: 'short' })}</p>
-                                 <p className="text-sm font-bold">{new Date(b.date).getDate()}</p>
-                              </div>
-                              <div>
-                                 <p className="text-xs font-bold text-mehendi-darker">{b.name}</p>
-                                 <p className="text-[9px] text-gray-500">{b.timeSlot}</p>
-                              </div>
-                           </div>
-                        ))}
-                     </div>
-                  </div>
-               </div>
-            </motion.div>
-          )}
-
-          {activeTab === "pricing" && pricing && (
-             <motion.div
-               key="pricing"
-               initial={{ opacity: 0, y: 20 }}
-               animate={{ opacity: 1, y: 0 }}
-               className="grid grid-cols-1 lg:grid-cols-2 gap-8"
-             >
-                <div className="bg-white p-8 rounded-3xl shadow-sm border border-mehendi-gold/10">
-                   <h3 className="font-serif font-bold text-lg text-mehendi-darker mb-6 flex items-center space-x-2">
-                      <Sparkles className="h-5 w-5 text-mehendi-gold" />
-                      <span>Bridal Packages Pricing</span>
-                   </h3>
-                   <div className="space-y-4">
-                      {["package1", "package2", "package3"].map((id, i) => (
-                        <div key={id} className="flex items-center justify-between p-4 bg-mehendi-bg/10 rounded-2xl">
-                           <span className="text-sm font-medium text-mehendi-darker capitalize">Package {i+1}</span>
-                           <div className="flex items-center space-x-2">
-                              <span className="text-xs text-gray-400 font-serif">₹</span>
-                              <input 
-                                type="number" 
-                          value={pricingDraft?.bridal?.[id] ?? pricing.bridal[id]}
-                          onChange={(e) => setPricingDraft((prev: any) => ({
-                           ...prev,
-                           bridal: {
-                            ...(prev?.bridal || pricing.bridal),
-                            [id]: Number(e.target.value),
-                           },
-                          }))}
-                                className="w-24 px-3 py-1.5 rounded-lg border border-gray-100 text-right font-serif font-bold text-mehendi-dark focus:border-mehendi-gold outline-none"
-                              />
-                           </div>
-                        </div>
-                      ))}
-                   </div>
-                 <button
-                  onClick={handleSavePricing}
-                  className="w-full mt-8 py-3 rounded-2xl bg-mehendi-dark text-white font-bold hover:bg-mehendi-darker transition-all"
-                 >
-                      Save Pricing Updates
-                   </button>
+              <div className="lg:col-span-8">
+                <BookingCalendar 
+                  selectedDate=""
+                  onSelectDate={handleToggleBlockDate}
+                  blockedDates={blockedDates}
+                  loadingBlocked={false}
+                />
+                <div className="mt-6 bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-start space-x-3">
+                  <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-800 leading-relaxed font-light">
+                    <strong>Availability Block Rule:</strong> Click any available date inside the calendar matrix above to instantly switch its status to "Blocked" (for holiday periods/personal reasons). Click a blocked date block to restore it back to "Available". Booked slots show red.
+                  </p>
                 </div>
-
-                <div className="bg-white p-8 rounded-3xl shadow-sm border border-mehendi-gold/10">
-                   <h3 className="font-serif font-bold text-lg text-mehendi-darker mb-6 flex items-center space-x-2">
-                      <Sparkles className="h-5 w-5 text-mehendi-gold" />
-                      <span>Special Offers & Coupons</span>
-                   </h3>
-                 <form onSubmit={handleAddOffer} className="space-y-4">
-                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input
-                      type="text"
-                      placeholder="Offer title"
-                      value={newOfferForm.title}
-                      onChange={(e) => setNewOfferForm((prev) => ({ ...prev, title: e.target.value }))}
-                      className="px-4 py-3 rounded-2xl border border-gray-100 focus:border-mehendi-gold outline-none text-sm"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Code"
-                      value={newOfferForm.code}
-                      onChange={(e) => setNewOfferForm((prev) => ({ ...prev, code: e.target.value }))}
-                      className="px-4 py-3 rounded-2xl border border-gray-100 focus:border-mehendi-gold outline-none text-sm uppercase"
-                    />
-                   </div>
-                   <input
-                    type="text"
-                    placeholder="Description"
-                    value={newOfferForm.description}
-                    onChange={(e) => setNewOfferForm((prev) => ({ ...prev, description: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-2xl border border-gray-100 focus:border-mehendi-gold outline-none text-sm"
-                   />
-                   <input
-                    type="number"
-                    min={1}
-                    placeholder="Discount %"
-                    value={newOfferForm.discountPercent}
-                    onChange={(e) => setNewOfferForm((prev) => ({ ...prev, discountPercent: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-2xl border border-gray-100 focus:border-mehendi-gold outline-none text-sm"
-                   />
-                   <button className="w-full flex items-center justify-center space-x-2 py-3 rounded-2xl bg-mehendi-dark text-white font-bold hover:bg-mehendi-darker transition-all">
-                    <Plus className="h-4 w-4" />
-                    <span>Add Offer</span>
-                   </button>
-                 </form>
-
-                 <div className="space-y-4 mt-6">
-                      {offers.map(offer => (
-                        <div key={offer.id} className="p-4 border border-gray-100 rounded-2xl flex items-center justify-between">
-                           <div>
-                              <p className="text-sm font-bold text-mehendi-darker">{offer.title}</p>
-                              <code className="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded border border-amber-100">{offer.code}</code>
-                           </div>
-                           <div className="flex items-center space-x-3">
-                              <span className="text-xs font-bold text-green-600">{offer.discountPercent}% Off</span>
-                        <button onClick={() => handleToggleOffer(offer.id)} className="text-red-400 hover:text-red-600 p-1">
-                                 <Trash2 className="h-4 w-4" />
-                              </button>
-                           </div>
+              </div>
+              
+              <div className="lg:col-span-4 space-y-6">
+                <div className="bg-white p-6 rounded-3xl border border-mehendi-gold/15 shadow-sm">
+                  <h3 className="font-serif font-bold text-base text-mehendi-darker mb-4 border-b border-mehendi-gold/10 pb-2">Upcoming Confirmed Events</h3>
+                  <div className="space-y-3">
+                    {bookings.filter(b => {
+                      const bDate = new Date(b.date);
+                      const today = new Date();
+                      today.setHours(0,0,0,0);
+                      return bDate >= today && b.status === "accepted";
+                    }).sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).slice(0, 5).map(b => (
+                      <div key={b.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-2xl border border-transparent hover:border-mehendi-gold/10 transition-all">
+                        <div className="bg-mehendi-dark text-white px-2.5 py-1.5 rounded-xl text-center min-w-[50px] shrink-0 font-medium">
+                          <p className="text-[9px] uppercase font-bold tracking-wider">{new Date(b.date).toLocaleDateString('en-US', { month: 'short' })}</p>
+                          <p className="text-sm font-bold">{new Date(b.date).getDate()}</p>
                         </div>
-                      ))}
-                   </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-mehendi-darker truncate">{b.name}</p>
+                          <p className="text-[9px] text-gray-500 font-light truncate">{b.timeSlot}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-             </motion.div>
-          )}
-
-          {activeTab === "settings" && (
-            <motion.div 
-              key="settings"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="max-w-2xl bg-white p-10 rounded-3xl shadow-sm border border-mehendi-gold/10"
-            >
-               <h3 className="font-serif text-xl font-bold text-mehendi-darker mb-8">Account & Portal Settings</h3>
-               <div className="space-y-6">
-                  <div className="flex flex-col space-y-2">
-                     <label className="text-xs font-bold uppercase text-gray-400 tracking-wider">Admin Username</label>
-                     <input type="text" defaultValue="admin" className="px-4 py-3 rounded-2xl border border-gray-100 focus:border-mehendi-gold outline-none" />
-                  </div>
-                  <div className="flex flex-col space-y-2">
-                     <label className="text-xs font-bold uppercase text-gray-400 tracking-wider">New Password</label>
-                     <input type="password" placeholder="Leave empty to keep current" className="px-4 py-3 rounded-2xl border border-gray-100 focus:border-mehendi-gold outline-none" />
-                  </div>
-                  <div className="pt-4 flex items-center justify-between border-t border-gray-50 mt-8">
-                     <div className="flex flex-col">
-                        <span className="text-sm font-bold text-mehendi-darker">Email Notifications</span>
-                        <span className="text-xs text-gray-400">Receive alerts for new bookings</span>
-                     </div>
-                     <div className="w-12 h-6 bg-mehendi-gold rounded-full relative p-1 cursor-pointer">
-                        <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
-                     </div>
-                  </div>
-                  <button className="w-full mt-10 py-4 bg-mehendi-dark text-white font-bold rounded-2xl hover:bg-mehendi-darker transition-all shadow-md">
-                     Update Admin Profile
-                  </button>
-               </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

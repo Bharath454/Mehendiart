@@ -9,7 +9,7 @@ export default function FloatingWhatsApp() {
       href="https://wa.me/919840792693?text=Hello,%20I'm%20interested%20in%20booking%20a%20Mehendi%20session."
       target="_blank"
       rel="noreferrer"
-      className="fixed bottom-6 right-6 z-[999] flex items-center justify-center bg-[#25D366] hover:bg-[#20BA56] text-white p-4 rounded-full shadow-[0_4px_16px_rgba(37,211,102,0.4)] hover:shadow-[0_6px_24px_rgba(37,211,102,0.6)] hover:scale-110 active:scale-95 transition-all duration-300 group border border-white/10"
+      className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[999] flex items-center justify-center bg-[#25D366] hover:bg-[#20BA56] text-white p-3.5 sm:p-4 rounded-full shadow-[0_4px_16px_rgba(37,211,102,0.4)] hover:shadow-[0_6px_24px_rgba(37,211,102,0.6)] hover:scale-110 active:scale-95 transition-all duration-300 group border border-white/10"
       aria-label="Chat on WhatsApp"
     >
       {/* Pulse rings */}
