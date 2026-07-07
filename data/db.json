@@ -1,0 +1,181 @@
+{
+  "bookings": [
+    {
+      "id": "bk-1",
+      "name": "Aishwarya R.",
+      "mobile": "9876543210",
+      "email": "aishwarya@gmail.com",
+      "eventType": "Wedding / Bridal",
+      "packageOrGuest": "package",
+      "packageName": "Bridal Package 3 (Full Hands & Legs till Ankle)",
+      "price": 4500,
+      "date": "2026-07-07",
+      "timeSlot": "10:00 AM - 02:00 PM",
+      "address": "Nungambakkam, Chennai",
+      "additionalNotes": "Please arrive on time. Looking forward to traditional designs.",
+      "status": "pending",
+      "createdAt": "2026-07-05T12:17:40.245Z"
+    },
+    {
+      "id": "bk-2",
+      "name": "Divya Kumar",
+      "mobile": "9840123456",
+      "email": "divya@yahoo.com",
+      "eventType": "Baby Shower",
+      "packageOrGuest": "guest",
+      "designType": "Indian",
+      "subDesignName": "Half Hand",
+      "price": 250,
+      "date": "2026-07-10",
+      "timeSlot": "03:00 PM - 06:00 PM",
+      "address": "Adyar, Chennai",
+      "additionalNotes": "Need simple lotus motif design.",
+      "status": "accepted",
+      "createdAt": "2026-07-04T12:17:40.245Z"
+    },
+    {
+      "id": "bk-3",
+      "name": "Pooja Sen",
+      "mobile": "9123456789",
+      "email": "pooja@outlook.com",
+      "eventType": "Festival",
+      "packageOrGuest": "guest",
+      "designType": "Arabic",
+      "subDesignName": "Elbow",
+      "price": 250,
+      "date": "2026-07-02",
+      "timeSlot": "11:00 AM - 01:00 PM",
+      "address": "Velachery, Chennai",
+      "status": "completed",
+      "createdAt": "2026-07-01T12:17:40.245Z"
+    },
+    {
+      "name": "OMAR ABUSAEED",
+      "mobile": "8757868977",
+      "email": "abusaeedpm@gmail.com",
+      "eventType": "Wedding / Bridal",
+      "packageOrGuest": "guest",
+      "packageName": "",
+      "designType": "Arabic",
+      "subDesignName": "Palm",
+      "price": 50,
+      "date": "2026-07-08",
+      "timeSlot": "08:00 AM - 10:00 AM",
+      "address": "hgasjcbhsjmduksdhvksdgfkuisekuy",
+      "additionalNotes": "fndufufjhfiuefiuwefui",
+      "id": "bk-1783310810427-8f7mfdgej",
+      "status": "pending",
+      "createdAt": "2026-07-06T04:06:50.427Z"
+    },
+    {
+      "name": "vs barath",
+      "mobile": "8015872307",
+      "email": "vsbarath095@gmail.com",
+      "eventType": "Wedding / Bridal",
+      "packageOrGuest": "package",
+      "packageName": "Bridal Package 1 (Basic)",
+      "designType": "",
+      "subDesignName": "",
+      "price": 3500,
+      "date": "2026-07-06",
+      "timeSlot": "10:00 AM - 01:00 PM",
+      "address": "ehrhjhefgehfejhgfefgjehj",
+      "additionalNotes": "",
+      "id": "bk-1783311718923-tlef1fta1",
+      "status": "pending",
+      "createdAt": "2026-07-06T04:21:58.923Z"
+    },
+    {
+      "name": "OMAR ABUSAEED",
+      "mobile": "9025206916",
+      "email": "abusaeedpm@gmail.com",
+      "eventType": "Wedding / Bridal",
+      "packageOrGuest": "package",
+      "packageName": "Bridal Package 1 (Basic)",
+      "designType": "",
+      "subDesignName": "",
+      "price": 3500,
+      "date": "2026-07-09",
+      "timeSlot": "08:00 AM - 10:00 AM",
+      "address": "rrtybhbhnhnhn h",
+      "additionalNotes": "",
+      "id": "bk-1783327579211-rgi79s6qd",
+      "status": "pending",
+      "createdAt": "2026-07-06T08:46:19.211Z"
+    },
+    {
+      "name": "OMAR ABUSAEED",
+      "mobile": "9025206916",
+      "email": "abusaeedpm@gmail.com",
+      "eventType": "Wedding / Bridal",
+      "packageOrGuest": "package",
+      "packageName": "Bridal Package 1 (Basic)",
+      "designType": "",
+      "subDesignName": "",
+      "price": 3500,
+      "date": "2026-07-11",
+      "timeSlot": "01:00 PM - 03:00 PM",
+      "address": "jhgcudgfjhfjg",
+      "additionalNotes": "",
+      "id": "bk-1783329344258-h0fomnkhg",
+      "status": "pending",
+      "createdAt": "2026-07-06T09:15:44.258Z"
+    },
+    {
+      "name": "OMAR ABUSAEED",
+      "mobile": "9025206916",
+      "email": "abusaeedpm@gmail.com",
+      "eventType": "Engagement / Roka",
+      "packageOrGuest": "package",
+      "packageName": "Bridal Package 2 (Standard)",
+      "designType": "",
+      "subDesignName": "",
+      "price": 4000,
+      "date": "2026-07-13",
+      "timeSlot": "01:00 PM - 03:00 PM",
+      "address": "dfffhftthththt",
+      "additionalNotes": "",
+      "id": "bk-1783330055793-50schg33b",
+      "status": "pending",
+      "createdAt": "2026-07-06T09:27:35.793Z"
+    }
+  ],
+  "blockedDates": [
+    {
+      "date": "2026-07-15",
+      "reason": "Personal Holiday / Family Function"
+    }
+  ],
+  "pricing": {
+    "bridal": {
+      "package1": 3500,
+      "package2": 4000,
+      "package3": 4500
+    },
+    "arabic": {
+      "palm": 50,
+      "wrist": 100,
+      "halfHand": 150,
+      "elbow": 250
+    },
+    "indian": {
+      "palm": 100,
+      "wrist": 150,
+      "halfHand": 250,
+      "threeQuarterHand": 350,
+      "elbow": 450
+    }
+  },
+  "offers": [
+    {
+      "id": "off-1",
+      "title": "Bridal Season Special",
+      "description": "Get 10% off on Bridal Package 3",
+      "code": "BRIDE10",
+      "discountPercent": 10,
+      "active": true
+    }
+  ],
+  "adminUsername": "admin",
+  "adminPasswordHash": "$2b$10$idQvbVNS515KUr6HxLF4meIJDOntl5j9SfCFFf5hOV2l58INleJJe"
+}
