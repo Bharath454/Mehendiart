@@ -16,7 +16,6 @@ export async function POST(request: Request) {
       packageName,
       designType,
       subDesignName,
-      price,
       date,
       timeSlot,
       address,
@@ -24,8 +23,30 @@ export async function POST(request: Request) {
     } = data;
 
     // Validate required fields
-    if (!name || !mobile || !email || !eventType || !packageOrGuest || !price || !date || !timeSlot || !address) {
+    if (!name || !mobile || !email || !eventType || !packageOrGuest || !date || !timeSlot || !address) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    // Compute price server-side based on selection
+    const PACKAGE_PRICES: Record<string, number> = {
+      "Bridal Package 1 (Basic)": 3500,
+      "Bridal Package 2 (Standard)": 4000,
+      "Bridal Package 3 (Grand Royal)": 4500,
+    };
+    const ARABIC_PRICES: Record<string, number> = {
+      Palm: 50, Wrist: 100, "Half Hand": 150, Elbow: 250,
+    };
+    const INDIAN_PRICES: Record<string, number> = {
+      Palm: 100, Wrist: 150, "Half Hand": 250, "3/4 Hand": 350, Elbow: 450,
+    };
+
+    let price = 0;
+    if (packageOrGuest === "package" && packageName) {
+      price = PACKAGE_PRICES[packageName] ?? 0;
+    } else if (packageOrGuest === "guest" && designType && subDesignName) {
+      price = designType === "Arabic"
+        ? (ARABIC_PRICES[subDesignName] ?? 0)
+        : (INDIAN_PRICES[subDesignName] ?? 0);
     }
 
     if (packageOrGuest === "package" && !packageName) {
