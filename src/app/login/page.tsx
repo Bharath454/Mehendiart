@@ -5,6 +5,29 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Lock, Mail, User, Sparkles, Loader2, ArrowLeft, Eye, EyeOff, CheckCircle } from "lucide-react";
 
+// Keyframe animation injected as a style tag
+const animStyles = `
+  @keyframes kenBurns {
+    0%   { transform: scale(1)    translateX(0px)  translateY(0px); }
+    33%  { transform: scale(1.08) translateX(-12px) translateY(-8px); }
+    66%  { transform: scale(1.05) translateX(10px)  translateY(6px); }
+    100% { transform: scale(1)    translateX(0px)  translateY(0px); }
+  }
+  @keyframes floatOrb {
+    0%, 100% { transform: translateY(0px) scale(1); opacity: 0.12; }
+    50%       { transform: translateY(-24px) scale(1.12); opacity: 0.22; }
+  }
+  @keyframes shimmerLine {
+    0%   { opacity: 0; transform: translateX(-100%); }
+    50%  { opacity: 0.4; }
+    100% { opacity: 0; transform: translateX(100%); }
+  }
+  .login-img-ken { animation: kenBurns 18s ease-in-out infinite; }
+  .login-orb     { animation: floatOrb 6s ease-in-out infinite; }
+  .login-orb2    { animation: floatOrb 9s ease-in-out infinite reverse; }
+  .login-shimmer { animation: shimmerLine 4s ease-in-out infinite 2s; }
+`;
+
 type AuthMode = "user-signin" | "user-signup" | "admin-signin";
 
 export default function UnifiedLoginPage() {
@@ -17,6 +40,18 @@ export default function UnifiedLoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+
+  // Redirect mobile users to home page since login is desktop-only
+  React.useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        router.replace("/");
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [router]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +83,7 @@ export default function UnifiedLoginPage() {
         setSuccessMsg(data.message || "Registration successful! You can now log in.");
         setMode("user-signin");
         setPassword("");
+        setName("");
       } else {
         // Login Admin or User
         const role = mode === "admin-signin" ? "admin" : "user";
@@ -60,11 +96,13 @@ export default function UnifiedLoginPage() {
         if (!res.ok) throw new Error(data.error || "Authentication failed.");
 
         if (data.role === "admin") {
-          router.push("/admin/dashboard");
+          setSuccessMsg("Admin access granted! Redirecting to dashboard...");
+          setTimeout(() => { window.location.href = "/admin/dashboard"; }, 800);
         } else {
-          router.push("/");
+          const welcomeName = data.user?.name ? ` Welcome, ${data.user.name}!` : "";
+          setSuccessMsg(`Login successful!${welcomeName} Redirecting...`);
+          setTimeout(() => { window.location.href = "/"; }, 1200);
         }
-        router.refresh();
       }
     } catch (err: any) {
       setError(err.message || "Something went wrong. Please check your credentials.");
@@ -74,7 +112,9 @@ export default function UnifiedLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-stretch bg-mehendi-bg">
+    <>
+      <style>{animStyles}</style>
+      <div className="min-h-screen flex items-stretch bg-mehendi-bg">
       {/* Back button */}
       <Link
         href="/"
@@ -86,24 +126,23 @@ export default function UnifiedLoginPage() {
 
       {/* Left side: Premium Mehendi Image Panel */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-mehendi-darker overflow-hidden">
+        {/* Unified premium brand PNG background (without zoom animations) */}
         <img
-          src="/api/local-image?name=bridal3"
-          alt="Chennai Mehendi Art Design"
-          className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay transition-transform duration-[10000ms] hover:scale-105"
+          src="/brand.png"
+          alt="Shahira Mehandi Brand Logo"
+          className="absolute inset-0 w-full h-full object-cover opacity-90"
         />
-        <div className="absolute inset-0 bg-gradient-to-tr from-mehendi-darker via-mehendi-darker/60 to-transparent" />
-        
-        <div className="relative z-10 p-16 flex flex-col justify-end h-full text-white">
-          <div className="inline-flex p-3 rounded-full bg-mehendi-gold/15 border border-mehendi-gold/30 mb-6 w-fit">
-            <Sparkles className="h-6 w-6 text-mehendi-gold" />
-          </div>
-          <h1 className="font-serif text-4xl sm:text-5xl font-bold tracking-wide leading-tight mb-4">
-            Chennai Mehendi Art
-          </h1>
-          <p className="text-mehendi-cream/80 font-light text-sm max-w-md leading-relaxed">
-            Beautiful, long-lasting premium organic mehendi designs crafted to elevate the joy of your special wedding ceremonies.
-          </p>
-        </div>
+        {/* Subtle overlay to soften the image and reduce extreme contrast */}
+        <div className="absolute inset-0 bg-mehendi-darker/20" />
+
+        {/* Floating gold orbs */}
+        <div className="login-orb absolute top-16 right-20 w-56 h-56 bg-mehendi-gold/12 rounded-full blur-3xl pointer-events-none" />
+        <div className="login-orb2 absolute bottom-32 right-10 w-40 h-40 bg-mehendi-gold/10 rounded-full blur-2xl pointer-events-none" />
+
+        {/* Shimmer line sweep */}
+        <div className="login-shimmer absolute top-1/3 left-0 right-0 h-px bg-gradient-to-r from-transparent via-mehendi-gold/50 to-transparent pointer-events-none" />
+
+
       </div>
 
       {/* Right side: Login Forms Panel */}
@@ -116,7 +155,7 @@ export default function UnifiedLoginPage() {
             <div className="lg:hidden inline-flex p-3 rounded-full bg-mehendi-dark/10 border border-mehendi-gold/20 mb-3">
               <Sparkles className="h-6 w-6 text-mehendi-gold" />
             </div>
-            <h2 className="font-serif text-3xl font-bold text-mehendi-darker tracking-wide">
+            <h2 className="text-3xl font-extrabold text-mehendi-darker tracking-wide">
               {mode === "user-signin" && "Welcome Back"}
               {mode === "user-signup" && "Create Account"}
               {mode === "admin-signin" && "Artist Portal"}
@@ -131,7 +170,14 @@ export default function UnifiedLoginPage() {
           {/* Mode Tabs */}
           <div className="grid grid-cols-3 gap-1 bg-white p-1 rounded-2xl border border-mehendi-gold/15 mb-6">
             <button
-              onClick={() => { setMode("user-signin"); setError(""); }}
+              onClick={() => { 
+                setMode("user-signin"); 
+                setError(""); 
+                setSuccessMsg("");
+                setEmail("");
+                setPassword("");
+                setName("");
+              }}
               className={`py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-wider rounded-xl transition-all ${
                 mode === "user-signin" ? "bg-mehendi-dark text-white" : "text-mehendi-darker/60 hover:text-mehendi-dark"
               }`}
@@ -139,7 +185,14 @@ export default function UnifiedLoginPage() {
               User Login
             </button>
             <button
-              onClick={() => { setMode("user-signup"); setError(""); }}
+              onClick={() => { 
+                setMode("user-signup"); 
+                setError(""); 
+                setSuccessMsg("");
+                setEmail("");
+                setPassword("");
+                setName("");
+              }}
               className={`py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-wider rounded-xl transition-all ${
                 mode === "user-signup" ? "bg-mehendi-dark text-white" : "text-mehendi-darker/60 hover:text-mehendi-dark"
               }`}
@@ -147,7 +200,14 @@ export default function UnifiedLoginPage() {
               Sign Up
             </button>
             <button
-              onClick={() => { setMode("admin-signin"); setError(""); }}
+              onClick={() => { 
+                setMode("admin-signin"); 
+                setError(""); 
+                setSuccessMsg("");
+                setEmail("");
+                setPassword("");
+                setName("");
+              }}
               className={`py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-wider rounded-xl transition-all ${
                 mode === "admin-signin" ? "bg-mehendi-gold text-mehendi-darker" : "text-mehendi-darker/60 hover:text-mehendi-dark"
               }`}
@@ -203,7 +263,7 @@ export default function UnifiedLoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={mode === "admin-signin" ? "shahirabanu1706@gmail.com" : "name@domain.com"}
+                  placeholder="name@domain.com"
                   className="px-4 py-2.5 rounded-xl border border-mehendi-gold/20 focus:border-mehendi-gold focus:ring-1 focus:ring-mehendi-gold focus:outline-none text-sm bg-white"
                 />
               </div>
@@ -259,10 +319,11 @@ export default function UnifiedLoginPage() {
           </div>
 
           <p className="text-center text-[10px] text-mehendi-olive/60 mt-8 font-light">
-            © Chennai Mehendi Art. Secured Access.
+            © Shahira Mehandi. Secured Access.
           </p>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

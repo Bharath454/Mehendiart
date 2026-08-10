@@ -4,9 +4,19 @@ import bcrypt from "bcryptjs";
 import connectToDatabase from "@/lib/mongoose";
 import { Config, User } from "@/lib/models";
 import { getJWTSecret, createAccessToken, createRefreshToken } from "@/lib/auth";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || 
+               request.headers.get("x-real-ip") || 
+               "127.0.0.1";
+
+    const limitResult = rateLimit(ip, 5, 60000); // 5 requests per minute
+    if (!limitResult.success) {
+      return rateLimitResponse(limitResult.remaining, limitResult.resetTime);
+    }
+
     const { email, password, role } = await request.json();
 
     if (!email || !password) {
@@ -37,7 +47,13 @@ export async function POST(request: Request) {
          });
       }
 
-      const adminEmail = process.env.ADMIN_EMAIL || "shahirabanu1706@gmail.com";
+      const adminEmail = process.env.ADMIN_EMAIL;
+      if (!adminEmail) {
+        return NextResponse.json(
+          { error: "Server Configuration Error: ADMIN_EMAIL is not set" },
+          { status: 500 }
+        );
+      }
 
       if (email.toLowerCase().trim() !== adminEmail.toLowerCase().trim()) {
         return NextResponse.json(

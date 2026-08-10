@@ -8,6 +8,7 @@ interface BookingCalendarProps {
   onSelectDate: (date: string) => void;
   blockedDates: string[]; // List of YYYY-MM-DD
   loadingBlocked: boolean;
+  allowClickBlocked?: boolean;
 }
 
 const MONTHS = [
@@ -22,6 +23,7 @@ export default function BookingCalendar({
   onSelectDate,
   blockedDates,
   loadingBlocked,
+  allowClickBlocked = false,
 }: BookingCalendarProps) {
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -98,7 +100,7 @@ export default function BookingCalendar({
         if (isPast) {
           cellClass += "text-gray-300 cursor-not-allowed pointer-events-none";
         } else if (isBlocked) {
-          cellClass += "text-red-400 bg-red-50/40 line-through cursor-not-allowed pointer-events-none";
+          cellClass += `text-red-400 bg-red-50/40 line-through ${allowClickBlocked ? "cursor-pointer" : "cursor-not-allowed pointer-events-none"}`;
           dotIndicator = <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-red-400" />;
         } else if (isSelected) {
           cellClass += "bg-mehendi-dark text-mehendi-cream font-bold shadow-md ring-2 ring-mehendi-gold/40";
@@ -112,7 +114,7 @@ export default function BookingCalendar({
         cells.push(
           <div
             key={`day-${currentDayNum}`}
-            onClick={() => !isPast && !isBlocked && onSelectDate(dateStr)}
+            onClick={() => !isPast && (!isBlocked || allowClickBlocked) && onSelectDate(dateStr)}
             className={cellClass}
           >
             <span>{currentDayNum}</span>
@@ -136,19 +138,18 @@ export default function BookingCalendar({
           <CalendarIcon className="h-5 w-5 text-mehendi-gold shrink-0" />
           <span>{MONTHS[currentMonth]} {currentYear}</span>
         </h4>
-        
+
         <div className="flex items-center space-x-1">
           <button
             type="button"
             onClick={handlePrevMonth}
             disabled={isPrevDisabled}
-            className={`p-2 rounded-lg border border-mehendi-gold/10 text-mehendi-dark hover:bg-mehendi-gold/5 focus:outline-none transition-colors ${
-              isPrevDisabled ? "opacity-35 cursor-not-allowed pointer-events-none" : ""
-            }`}
+            className={`p-2 rounded-lg border border-mehendi-gold/10 text-mehendi-dark hover:bg-mehendi-gold/5 focus:outline-none transition-colors ${isPrevDisabled ? "opacity-35 cursor-not-allowed pointer-events-none" : ""
+              }`}
           >
             <ChevronLeft className="h-4.5 w-4.5" />
           </button>
-          
+
           <button
             type="button"
             onClick={handleNextMonth}
@@ -164,9 +165,8 @@ export default function BookingCalendar({
         {DAYS_OF_WEEK.map((day, idx) => (
           <div
             key={day}
-            className={`text-xs font-semibold uppercase tracking-wider py-1.5 text-mehendi-olive/80 ${
-              idx === 0 ? "text-mehendi-gold" : ""
-            }`}
+            className={`text-xs font-semibold uppercase tracking-wider py-1.5 text-mehendi-olive/80 ${idx === 0 ? "text-mehendi-gold" : ""
+              }`}
           >
             {day}
           </div>

@@ -27,12 +27,15 @@ export default function CustomCursor() {
   const lastPos = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
-    // Only enable on desktop
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-      navigator.userAgent
-    ) || (typeof window !== "undefined" && window.innerWidth < 768);
+    // Enable on all non-touch devices (desktops/laptops with a mouse)
+    const isTouchDevice = 
+      typeof window !== "undefined" && (
+        'ontouchstart' in window || 
+        navigator.maxTouchPoints > 0 ||
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      );
     
-    if (isMobile) return;
+    if (isTouchDevice) return;
     
     setIsMounted(true);
     document.body.classList.add("md:custom-cursor-active");
@@ -72,13 +75,16 @@ export default function CustomCursor() {
 
     const onMouseOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
+      if (!target || typeof target.tagName !== "string") return;
       const isClickable =
         target.tagName === "BUTTON" ||
         target.tagName === "A" ||
         target.onclick != null ||
-        target.closest("button") != null ||
-        target.closest("a") != null ||
-        target.getAttribute("role") === "button";
+        (typeof target.closest === "function" && (
+          target.closest("button") != null ||
+          target.closest("a") != null
+        )) ||
+        (typeof target.getAttribute === "function" && target.getAttribute("role") === "button");
       setIsHoveringClickable(!!isClickable);
     };
 
@@ -86,13 +92,11 @@ export default function CustomCursor() {
     window.addEventListener("click", onClick);
     window.addEventListener("mouseover", onMouseOver);
 
-    // Dynamic style to hide real cursor on desktop
+    // Dynamic style to hide real cursor on all non-touch devices
     const style = document.createElement("style");
     style.innerHTML = `
-      @media (min-width: 768px) {
-        body, a, button, [role="button"], input, select, textarea, label {
-          cursor: none !important;
-        }
+      body, a, button, [role="button"], input, select, textarea, label {
+        cursor: none !important;
       }
     `;
     document.head.appendChild(style);
@@ -185,19 +189,19 @@ export default function CustomCursor() {
         style={{
           left: position.x,
           top: position.y,
-          x: -2, // Tip of the cone alignment
-          y: -36, // Adjust to drag tip from mouse coordinate
+          x: -11, // Centered horizontal alignment (wherever the cone touches is clickable)
+          y: -17.5, // Centered vertical alignment (wherever the cone touches is clickable)
         }}
         animate={{
-          scale: isHoveringClickable ? 1.3 : 1.0,
+          scale: isHoveringClickable ? 1.25 : 1.0,
           rotate: isHoveringClickable ? -20 : 0,
         }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
       >
         {/* Mehendi Cone SVG */}
         <svg
-          width="28"
-          height="44"
+          width="22"
+          height="35"
           viewBox="0 0 28 44"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"

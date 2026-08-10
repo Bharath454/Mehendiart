@@ -1,19 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  --background: #FAF9F6; /* Luxury warm cream white */
-  --foreground: #1A2E22; /* Very deep mehendi green for body text */
+  --background: #FAF9F6;
+  /* Luxury warm cream white */
+  --foreground: #1A2E22;
+  /* Very deep mehendi green for body text */
 }
 
 @theme {
   /* Premium Mehendi Color Palette */
-  --color-mehendi-dark: #355E3B; /* Primary Dark Mehendi Green */
-  --color-mehendi-darker: #1A2E22; /* Very deep dark green */
-  --color-mehendi-olive: #556B2F; /* Accent Olive Green */
-  --color-mehendi-gold: #D4AF37; /* Metallic Gold Accent */
-  --color-mehendi-gold-hover: #AA8C2C; /* Deeper Gold */
-  --color-mehendi-cream: #FFFDD0; /* Soft highlight cream */
-  --color-mehendi-bg: #FAF9F6; /* Soft warm white */
+  --color-mehendi-dark: #355E3B;
+  /* Primary Dark Mehendi Green */
+  --color-mehendi-darker: #1A2E22;
+  /* Very deep dark green */
+  --color-mehendi-olive: #556B2F;
+  /* Accent Olive Green */
+  --color-mehendi-gold: #D4AF37;
+  /* Metallic Gold Accent */
+  --color-mehendi-gold-hover: #AA8C2C;
+  /* Deeper Gold */
+  --color-mehendi-cream: #FFFDD0;
+  /* Soft highlight cream */
+  --color-mehendi-bg: #FAF9F6;
+  /* Soft warm white */
 
   /* Override Fonts */
   --font-serif: var(--font-serif);
@@ -30,7 +39,8 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 80px;
-  background-color: var(--background);
+  background-color: #FAF9F6;
+  /* Set immediately to prevent flash */
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -61,9 +71,18 @@ body {
     font-size: 15px;
   }
 
-  h1 { font-size: 2rem !important; line-height: 1.15 !important; }
-  h2 { font-size: 1.6rem !important; }
-  h3 { font-size: 1.25rem !important; }
+  h1 {
+    font-size: 2rem;
+    line-height: 1.15;
+  }
+
+  h2 {
+    font-size: 1.6rem;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+  }
 
   section {
     padding-top: 3.5rem !important;
@@ -79,12 +98,17 @@ body {
 
 /* Small tablet: 641px – 768px */
 @media (min-width: 641px) and (max-width: 768px) {
-  html { font-size: 15.5px; }
+  html {
+    font-size: 15.5px;
+  }
 }
 
 /* Tablet: 769px – 1024px */
 @media (min-width: 769px) and (max-width: 1024px) {
-  html { font-size: 15.5px; }
+  html {
+    font-size: 15.5px;
+  }
+
   section {
     padding-top: 4rem !important;
     padding-bottom: 4rem !important;
@@ -93,12 +117,16 @@ body {
 
 /* Small laptop: 1025px – 1280px */
 @media (min-width: 1025px) and (max-width: 1280px) {
-  html { font-size: 16px; }
+  html {
+    font-size: 16px;
+  }
 }
 
 /* Large laptop / desktop: > 1280px */
 @media (min-width: 1281px) {
-  html { font-size: 16px; }
+  html {
+    font-size: 16px;
+  }
 }
 
 ::selection {
@@ -106,7 +134,12 @@ body {
   color: #1A2E22;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-serif), Georgia, serif;
 }
 
@@ -119,23 +152,34 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar {
   width: 10px;
 }
+
 ::-webkit-scrollbar-track {
   background: #FAF9F6;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #355E3B;
   border-radius: 5px;
   border: 2px solid #FAF9F6;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #2C4C38;
 }
 
 /* Animations helper */
 @keyframes float {
-  0% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-10px) rotate(3deg); }
-  100% { transform: translateY(0px) rotate(0deg); }
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-10px) rotate(3deg);
+  }
+
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
 }
 
 .animate-float-slow {
@@ -166,6 +210,7 @@ h1, h2, h3, h4, h5, h6 {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
@@ -186,4 +231,52 @@ h1, h2, h3, h4, h5, h6 {
 /* Ensure iframes (Google Maps) are fully responsive */
 iframe {
   max-width: 100%;
+}
+
+/* ── Hide ALL Next.js dev panels / overlays ── */
+/* Issues panel (bottom-left corner) */
+nextjs-portal,
+[data-nextjs-dialog],
+[data-nextjs-dialog-overlay],
+[data-nextjs-toast],
+next-dev-overlay,
+#__next_error__,
+.__next-dev-overlay,
+[class*="nextjs-container"],
+[class*="nextjs-toast"],
+[class*="nextjs-issues"],
+body>nextjs-portal {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Custom Ken Burns Banner Effect */
+@keyframes kenburns {
+  0% {
+    transform: scale(1.05) translate(0, 0);
+  }
+  50% {
+    transform: scale(1.15) translate(-1%, -1%);
+  }
+  100% {
+    transform: scale(1.05) translate(0, 0);
+  }
+}
+.animate-kenburns {
+  animation: kenburns 25s ease-in-out infinite;
+}
+
+/* Scrolling Ribbon Marquee Effect */
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee-slow {
+  animation: marquee-scroll 30s linear infinite;
 }

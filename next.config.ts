@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isProd = process.env.NODE_ENV === "production";
+
 const securityHeaders = [
   // Prevent clickjacking
   {
@@ -26,27 +28,33 @@ const securityHeaders = [
     key: "X-DNS-Prefetch-Control",
     value: "on",
   },
+];
+
+if (isProd) {
   // Strict transport security (HTTPS only)
-  {
+  securityHeaders.push({
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
-  },
+  });
+
   // Basic CSP to prevent XSS
-  {
+  securityHeaders.push({
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // Next.js needs these for dev
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://maps.googleapis.com https://maps.google.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://maps.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https:",
-      "connect-src 'self'",
+      // Allow Google Maps iframe embeds
+      "frame-src 'self' https://maps.google.com https://www.google.com https://maps.googleapis.com",
+      "connect-src 'self' ws: wss: https://maps.googleapis.com https://maps.google.com https://*.googleapis.com",
       "frame-ancestors 'self'",
       "base-uri 'self'",
       "form-action 'self'",
     ].join("; "),
-  },
-];
+  });
+}
 
 const nextConfig: NextConfig = {
   async headers() {
@@ -69,12 +77,29 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Production optimizations
+  // ─── Dev Experience ───────────────────────────────────────────────────────
+  devIndicators: {
+    position: "bottom-right",   // Move away if shown, but CSS will hide it
+  },
+  reactStrictMode: false,       // Disable double-render in dev (faster dev UX)
+  allowedDevOrigins: [
+    "localhost:3000",
+    "10.35.189.25:3000",
+    "304cbbb4ea08bb.lhr.life",
+    "*.lhr.life",
+    "*.loca.lt"
+  ],
+
+  // ─── Router loading bar ───────────────────────────────────────────────────
+  experimental: {
+    clientRouterFilterRedirects: false,
+  },
+
+  // ─── Production optimizations ─────────────────────────────────────────────
   poweredByHeader: false,       // Remove X-Powered-By: Next.js header
   compress: true,               // Enable gzip compression
-  reactStrictMode: true,        // Strict mode for catching bugs early
 
-  // Image optimization
+  // ─── Image optimization ───────────────────────────────────────────────────
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 3600,

@@ -11,7 +11,7 @@ const testimonials = [
     role: "Bride",
     location: "George Town, Chennai",
     image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&h=150&q=80",
-    text: "Chennai Mehendi Art created the most breathtaking Rajasthani design for my wedding. The lines were incredibly clean, and the stain color turned out a rich, dark mahogany that lasted for over a week! Absolute professionals.",
+    text: "Shahira Mehandi created the most breathtaking Rajasthani design for my wedding. The lines were incredibly clean, and the stain color turned out a rich, dark mahogany that lasted for over a week! Absolute professionals.",
     rating: 5,
   },
   {
@@ -81,7 +81,7 @@ export default function Testimonials() {
   };
 
   return (
-    <section id="testimonials" className="py-14 sm:py-20 bg-white relative overflow-hidden w-full">
+    <section id="testimonials" className="py-8 sm:py-12 bg-white relative overflow-hidden w-full">
       <div className="absolute inset-0 pattern-overlay opacity-15" />
       
       {/* Background circles */}
@@ -90,7 +90,7 @@ export default function Testimonials() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10 w-full">
         
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-6">
           <div className="flex justify-center mb-4">
             <Sparkles className="h-6 w-6 text-mehendi-gold" />
           </div>
@@ -104,10 +104,10 @@ export default function Testimonials() {
         </div>
 
         {/* Testimonial slider wrapper */}
-        <div className="relative bg-mehendi-bg/35 border border-mehendi-gold/20 rounded-3xl p-5 sm:p-8 lg:p-12 shadow-md">
+        <div className="relative bg-mehendi-bg/35 border border-mehendi-gold/20 rounded-3xl p-4 sm:p-6 lg:p-8 shadow-md">
           <Quote className="absolute top-5 left-5 h-10 sm:h-12 w-10 sm:w-12 text-mehendi-gold/15 rotate-180 shrink-0" />
           
-          <div className="relative min-h-[200px] sm:min-h-[220px] flex items-center justify-center">
+          <div className="relative min-h-[160px] sm:min-h-[180px] flex items-center justify-center">
             <AnimatePresence mode="wait">
               <motion.div
                 key={testimonials[index].id}
@@ -130,21 +130,13 @@ export default function Testimonials() {
                 </p>
 
                 {/* Profile detail */}
-                <div className="flex items-center space-x-4">
-                  <img
-                    src={testimonials[index].image}
-                    alt={testimonials[index].name}
-                    className="w-12 h-12 rounded-full border border-mehendi-gold/30 object-cover shrink-0"
-                    loading="lazy"
-                  />
-                  <div className="text-left">
-                    <h4 className="font-serif font-bold text-mehendi-darker text-sm sm:text-base">
-                      {testimonials[index].name}
-                    </h4>
-                    <p className="text-xs text-mehendi-olive font-light">
-                      {testimonials[index].role} • {testimonials[index].location}
-                    </p>
-                  </div>
+                <div className="text-center">
+                  <h4 className="font-serif font-bold text-mehendi-darker text-sm sm:text-base">
+                    {testimonials[index].name}
+                  </h4>
+                  <p className="text-xs text-mehendi-olive font-light mt-0.5">
+                    {testimonials[index].role} • {testimonials[index].location}
+                  </p>
                 </div>
 
               </motion.div>

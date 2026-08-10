@@ -1,9 +1,17 @@
 "use client";
 
 import React from "react";
+import { usePathname } from "next/navigation";
 import { MessageCircle } from "lucide-react";
 
 export default function FloatingWhatsApp() {
+  const pathname = usePathname();
+
+  // Hide WhatsApp floating button on admin dashboard and portals
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/login")) {
+    return null;
+  }
+
   return (
     <a
       href="https://wa.me/919840792693?text=Hello,%20I'm%20interested%20in%20booking%20a%20Mehendi%20session."

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Phone, Mail, MessageCircle, MapPin, Sparkles, Send, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
+import GoogleMapEmbed from "./GoogleMapEmbed";
 
 export default function Contact() {
   const [formData, setFormData] = useState({ name: "", email: "", mobile: "", message: "" });
@@ -157,98 +158,90 @@ export default function Contact() {
             </div>
 
             {/* Quick Contact Links in Card */}
-            <div className="mt-8 pt-6 border-t border-mehendi-gold/10 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="mt-8 pt-6 border-t border-mehendi-gold/10 grid grid-cols-2 gap-2 sm:gap-4">
               <a
                 href="https://wa.me/919840792693"
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center space-x-3 p-3 bg-green-50 rounded-2xl border border-green-200/50 hover:bg-green-100/50 transition-colors"
+                className="flex items-center space-x-1.5 sm:space-x-3 p-2 sm:p-3 bg-green-50 rounded-xl sm:rounded-2xl border border-green-200/50 hover:bg-green-100/50 transition-colors text-left min-w-0"
               >
-                <MessageCircle className="h-5 w-5 text-green-600" />
-                <div className="flex flex-col text-left">
-                  <span className="text-[10px] uppercase font-bold text-green-800">WhatsApp Chat</span>
-                  <span className="text-xs text-green-900 font-medium">+91 98407 92693</span>
+                <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 shrink-0" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[8px] sm:text-[10px] uppercase font-bold text-green-800 tracking-wider">WhatsApp</span>
+                  <span className="text-[10px] sm:text-xs text-green-900 font-medium truncate leading-tight">+91 98407 92693</span>
                 </div>
               </a>
               
               <a
                 href="tel:+919840792693"
-                className="flex items-center space-x-3 p-3 bg-mehendi-dark/5 rounded-2xl border border-mehendi-dark/10 hover:bg-mehendi-dark/10 transition-colors"
+                className="flex items-center space-x-1.5 sm:space-x-3 p-2 sm:p-3 bg-mehendi-dark/5 rounded-xl sm:rounded-2xl border border-mehendi-dark/10 hover:bg-mehendi-dark/10 transition-colors text-left min-w-0"
               >
-                <Phone className="h-5 w-5 text-mehendi-dark" />
-                <div className="flex flex-col text-left">
-                  <span className="text-[10px] uppercase font-bold text-mehendi-dark">Direct Call</span>
-                  <span className="text-xs text-mehendi-darker font-medium">+91 98407 92693</span>
+                <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-mehendi-dark shrink-0" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[8px] sm:text-[10px] uppercase font-bold text-mehendi-dark tracking-wider">Call</span>
+                  <span className="text-[10px] sm:text-xs text-mehendi-darker font-medium truncate leading-tight">+91 98407 92693</span>
                 </div>
               </a>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="mt-3 sm:mt-4 grid grid-cols-3 gap-2 sm:gap-3">
               <a
-                href="mailto:shahirabanu1706@gmail.com"
-                className="flex items-center space-x-3 p-3 bg-mehendi-dark/5 rounded-2xl border border-mehendi-dark/10 hover:bg-mehendi-dark/10 transition-colors"
+                href="mailto:info@shahiramehandi.com"
+                className="flex items-center space-x-1.5 sm:space-x-3 p-2 sm:p-3 bg-mehendi-dark/5 rounded-xl sm:rounded-2xl border border-mehendi-dark/10 hover:bg-mehendi-dark/10 transition-colors text-left min-w-0"
               >
-                <Mail className="h-5 w-5 text-mehendi-dark" />
-                <div className="flex flex-col text-left">
-                  <span className="text-[10px] uppercase font-bold text-mehendi-dark">Email</span>
-                  <span className="text-xs text-mehendi-darker font-medium">shahirabanu1706@gmail.com</span>
+                <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-mehendi-dark shrink-0" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[8px] sm:text-[10px] uppercase font-bold text-mehendi-dark tracking-wider">Email</span>
+                  <span className="text-[9px] sm:text-xs text-mehendi-darker font-medium truncate leading-tight">info@shahiramehandi.com</span>
                 </div>
               </a>
 
               <a
-                href="https://instagram.com"
+                href="https://instagram.com/chennai_mehendi_art"
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center space-x-3 p-3 bg-white rounded-2xl border border-mehendi-gold/10 hover:border-mehendi-gold/30 transition-colors"
+                className="flex items-center space-x-1.5 sm:space-x-3 p-2 sm:p-3 bg-white rounded-xl sm:rounded-2xl border border-pink-200 hover:bg-pink-50 transition-colors text-left min-w-0"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-mehendi-dark">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 sm:h-5 sm:w-5 text-pink-600 shrink-0">
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
                   <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                   <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
                 </svg>
-                <div className="flex flex-col text-left">
-                  <span className="text-[10px] uppercase font-bold text-mehendi-dark">Instagram</span>
-                  <span className="text-xs text-mehendi-darker font-medium">@chennai_mehendi_art</span>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[8px] sm:text-[10px] uppercase font-bold text-pink-700 tracking-wider">Instagram</span>
+                  <span className="text-[9px] sm:text-xs text-pink-600 font-medium truncate leading-tight">@chennai_mehendi_art</span>
                 </div>
               </a>
 
               <a
-                href="https://facebook.com/Shahira Megendi"
+                href="https://facebook.com/ShahiraMehendi"
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center space-x-3 p-3 bg-white rounded-2xl border border-mehendi-gold/10 hover:border-mehendi-gold/30 transition-colors"
+                className="flex items-center space-x-1.5 sm:space-x-3 p-2 sm:p-3 bg-blue-50 rounded-xl sm:rounded-2xl border border-blue-200 hover:bg-blue-100 transition-colors text-left min-w-0"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-mehendi-dark">
-                  <path d="M18 2h-3a5 5 0 0 0 -5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 shrink-0">
+                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
                 </svg>
-                <div className="flex flex-col text-left">
-                  <span className="text-[10px] uppercase font-bold text-mehendi-dark">Facebook</span>
-                  <span className="text-xs text-mehendi-darker font-medium">Shahira Megendi</span>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[8px] sm:text-[10px] uppercase font-bold text-blue-700 tracking-wider">Facebook</span>
+                  <span className="text-[9px] sm:text-xs text-blue-600 font-medium truncate leading-tight">Shahira Mehendi</span>
                 </div>
               </a>
             </div>
 
           </div>
 
-          {/* Col 2: Interactive Google Map */}
+          {/* Col 2: Google Maps */}
           <div className="lg:col-span-6 flex flex-col">
-            <div className="relative w-full h-full min-h-[280px] sm:min-h-[350px] rounded-3xl border-[4px] sm:border-[6px] border-white shadow-xl overflow-hidden group">
+            <div className="relative w-full h-full rounded-3xl border-[4px] sm:border-[6px] border-white shadow-xl overflow-hidden">
               <div className="absolute inset-0 border-2 border-mehendi-gold/30 rounded-[18px] z-10 m-0.5 pointer-events-none" />
-              
-              {/* Embed Google Maps Chennai location */}
-              <iframe
-                title="Chennai Mehendi Art Studio Location"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3886.28424076735!2d80.24070081482226!3d13.065278190794586!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1m3!1d3886.28424076735!2d80.24070081482226!3d13.065278190794586!2sNungambakkam%2C%20Chennai%2C%20Tamil%20Nadu!5e0!3m2!1sen!2sin!4v1620000000000!5m2!1sen!2sin"
-                className="w-full h-full border-0 grayscale opacity-90 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
-                allowFullScreen={true}
-                loading="lazy"
-              />
+              <GoogleMapEmbed />
             </div>
-            
-            {/* Map info block */}
+
+            {/* Address info */}
             <div className="mt-4 flex items-start space-x-2 text-xs text-mehendi-olive font-light px-2">
-              <MapPin className="h-4.5 w-4.5 text-mehendi-gold shrink-0 mt-0.5" />
-              <p>Visiting Studio: No:42/87, Angappan Naicke Street, George Town, Mannady, Chennai - 600001. Prior appointment booking required.</p>
+              <MapPin className="h-4 w-4 text-mehendi-gold shrink-0 mt-0.5" />
+              <p>No:42/87, Angappan Naicke Street, George Town, Mannady, Chennai - 600001. Prior appointment required.</p>
             </div>
           </div>
 

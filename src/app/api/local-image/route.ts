@@ -27,7 +27,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Image not found" }, { status: 404 });
   }
 
-  const filePath = path.join(process.cwd(), "images", fileName);
+  // Read and serve directly from the public/images folder
+  const filePath = path.join(process.cwd(), "public", "images", fileName);
 
   if (!fs.existsSync(filePath)) {
     return NextResponse.json({ error: "Image file missing" }, { status: 404 });
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
   return new NextResponse(buffer, {
     headers: {
       "Content-Type": contentType,
-      "Cache-Control": "public, max-age=3600",
+      "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
     },
   });
 }

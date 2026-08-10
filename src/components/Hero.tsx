@@ -17,80 +17,68 @@ export default function Hero() {
   return (
     <section
       id="home"
-      className="relative min-h-screen sm:min-h-[92vh] flex items-center pt-20 sm:pt-24 pb-12 sm:pb-16 overflow-hidden bg-gradient-to-b from-mehendi-cream/40 via-mehendi-bg to-mehendi-bg w-full"
+      className="relative min-h-screen lg:h-screen flex items-start lg:items-center pt-52 sm:pt-56 lg:pt-20 pb-12 lg:pb-0 overflow-hidden w-full"
     >
-      {/* Background Pattern Overlay */}
-      <div className="absolute inset-0 pattern-overlay opacity-30" />
-      
-      {/* Floating Mandalas / Paisleys */}
-      <div className="absolute top-[15%] left-[5%] text-mehendi-gold/15 animate-float-slow hidden md:block">
-        <svg width="120" height="120" viewBox="0 0 100 100" fill="currentColor">
+      {/* ── YOUR PHOTO — full background ── */}
+      <img
+        src="/shared-bg.jpeg"
+        alt="Mehendi background"
+        className="absolute inset-0 w-full h-full object-cover z-0 origin-center opacity-55"
+        style={{ filter: "brightness(1.25) contrast(0.92)" }}
+        loading="eager"
+      />
+
+      {/* Light cream overlay — spotlights the hand and fades the rest of the screen to solid background */}
+      <div
+        className="absolute inset-0 z-[1]"
+        style={{
+          background:
+            "radial-gradient(circle at 45% 50%, rgba(250, 249, 246, 0.35) 0%, rgba(250, 249, 246, 0.65) 45%, rgba(250, 249, 246, 0.98) 90%)",
+        }}
+      />
+
+      {/* ── Subtle pattern overlay ── */}
+      <div className="absolute inset-0 pattern-overlay opacity-[0.06] z-[3]" />
+
+      {/* ── Floating decorative SVG mandalas ── */}
+      <div className="absolute top-[14%] left-[4%] text-amber-700/10 animate-float-slow hidden md:block z-[4]">
+        <svg width="130" height="130" viewBox="0 0 100 100" fill="currentColor">
           <circle cx="50" cy="50" r="10" />
           <path d="M50 0 C40 25, 60 25, 50 40 C40 25, 60 25, 50 0" />
           <path d="M50 100 C40 75, 60 75, 50 60 C40 75, 60 75, 50 100" />
           <path d="M0 50 C25 40, 25 60, 40 50 C25 40, 25 60, 0 50" />
           <path d="M100 50 C75 40, 75 60, 60 50 C75 40, 75 60, 100 50" />
-          <path d="M15 15 C30 30, 30 30, 35 35" stroke="currentColor" strokeWidth="2" />
-          <path d="M85 85 C70 70, 70 70, 65 65" stroke="currentColor" strokeWidth="2" />
-          <path d="M15 85 C30 70, 30 70, 35 65" stroke="currentColor" strokeWidth="2" />
-          <path d="M85 15 C70 30, 70 30, 65 35" stroke="currentColor" strokeWidth="2" />
         </svg>
       </div>
-
-      <div className="absolute bottom-[10%] right-[8%] text-mehendi-dark/10 animate-float-medium hidden lg:block">
-        <svg width="140" height="140" viewBox="0 0 100 100" fill="currentColor">
-          <path d="M50 15 C65 5, 80 20, 75 40 C70 55, 55 70, 50 85 C45 70, 30 55, 25 40 C20 20, 35 5, 50 15 Z" />
-          <circle cx="50" cy="40" r="8" fill="white" fillOpacity="0.3" />
-        </svg>
-      </div>
-
-      <div className="absolute top-[40%] right-[45%] text-mehendi-olive/10 animate-float-fast hidden sm:block">
+      <div className="absolute top-[38%] right-[42%] text-amber-800/8 animate-float-fast hidden sm:block z-[4]">
         <svg width="60" height="60" viewBox="0 0 100 100" fill="currentColor">
           <circle cx="50" cy="50" r="15" />
-          <circle cx="50" cy="50" r="25" fill="none" stroke="currentColor" strokeWidth="3" />
+          <circle cx="50" cy="50" r="28" fill="none" stroke="currentColor" strokeWidth="3" />
         </svg>
       </div>
 
+      {/* ── Main content ── */}
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          
-          {/* Text Content */}
-          <div className="lg:col-span-7 flex flex-col space-y-4 sm:space-y-6 text-center lg:text-left">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="inline-flex items-center space-x-2 bg-mehendi-dark/10 text-mehendi-dark px-3 sm:px-4 py-1.5 sm:py-2 rounded-full self-center lg:self-start border border-mehendi-dark/20 text-[10px] sm:text-xs font-semibold uppercase tracking-widest"
-            >
-              <Sparkles className="h-4 w-4 text-mehendi-gold animate-spin-slow shrink-0" />
-              <span>Professional Mehendi Artist</span>
-            </motion.div>
 
-            <motion.h1
-              initial={{ opacity: 0, y: 25 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.15 }}
+          {/* Text Content */}
+          <div className="lg:col-span-7 flex flex-col space-y-4 sm:space-y-6 text-center lg:text-left mt-16 sm:mt-0">
+
+            <h1
               className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-bold text-mehendi-darker leading-[1.1] tracking-wide"
             >
               <span className="text-mehendi-dark">Creating beautiful bridal memories</span>{" "}with elegant Mehendi designs
-            </motion.h1>
+            </h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+            <p
               className="text-sm sm:text-base lg:text-lg text-mehendi-darker/80 max-w-xl font-light leading-relaxed self-center lg:self-start"
             >
-              Creating beautiful bridal memories with elegant Mehendi designs. Handcrafted organic henna patterns for brides, families, and celebrations across Chennai.
-            </motion.p>
+              Handcrafted organic henna patterns for brides, families, and celebrations across Chennai.
+            </p>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.45 }}
-              className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 sm:gap-4 pt-2 sm:pt-4"
+            <div
+              className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 sm:gap-4 pt-4 sm:pt-6"
             >
-              {/* Main Booking Button */}
               <Link
                 href="/booking"
                 className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-mehendi-dark text-mehendi-cream font-medium px-6 sm:px-8 py-3.5 sm:py-4 rounded-full border border-mehendi-gold/40 shadow-lg hover:shadow-[0_6px_20px_rgba(53,94,59,0.35)] hover:bg-mehendi-darker hover:scale-105 transition-all duration-300 text-sm sm:text-base"
@@ -99,63 +87,54 @@ export default function Hero() {
                 <span>Book Appointment</span>
               </Link>
 
-              {/* Packages Anchor Button */}
               <a
                 href="#bridal-packages"
                 onClick={handleScrollToPackages}
-                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-transparent text-mehendi-dark hover:text-mehendi-gold hover:bg-mehendi-dark/5 font-medium px-6 sm:px-8 py-3.5 sm:py-4 rounded-full border-2 border-mehendi-dark/20 hover:border-mehendi-gold transition-all duration-300 text-sm sm:text-base"
+                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-transparent text-mehendi-dark hover:text-mehendi-gold hover:bg-mehendi-dark/5 font-medium px-6 sm:px-8 py-3.5 sm:py-4 rounded-full border-2 border-mehendi-dark/30 hover:border-mehendi-gold transition-all duration-300 text-sm sm:text-base"
               >
                 <Compass className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
                 <span>View Packages</span>
               </a>
-            </motion.div>
+            </div>
           </div>
 
           {/* Luxury Arched Image Section */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="lg:col-span-5 flex justify-center relative mt-4 sm:mt-8 lg:mt-0"
+          <div
+            className="lg:col-span-5 flex justify-center relative mt-12 lg:mt-0"
           >
-            {/* Double Arched Frame Shadow Background */}
-            <div className="absolute inset-0 bg-mehendi-gold/10 blur-xl rounded-full scale-90 -z-10" />
-            
-            {/* The Arched Portrait Frame */}
-            <div className="relative w-full max-w-[280px] sm:max-w-[320px] lg:max-w-[340px] aspect-[4/5] rounded-t-full border-[6px] sm:border-[8px] border-mehendi-cream shadow-2xl overflow-hidden group">
-              <div className="absolute inset-0 border-2 border-mehendi-gold/30 rounded-t-full z-10 m-1 pointer-events-none" />
-              
-              {/* Next.js responsive image replacement using standard img for flexibility */}
+            <div className="absolute inset-0 bg-amber-400/10 blur-xl rounded-full scale-90 -z-10" />
+
+            <div className="relative w-full max-w-[280px] sm:max-w-[320px] lg:max-w-[340px] aspect-[4/5] rounded-t-full border-[6px] sm:border-[8px] border-amber-100/80 shadow-2xl overflow-hidden group">
+              <div className="absolute inset-0 border-2 border-amber-400/30 rounded-t-full z-10 m-1 pointer-events-none" />
               <img
                 src="/hero.jpeg"
                 alt="Professional bridal Mehendi artwork on elegant hands"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 loading="eager"
               />
-              
-              {/* Subtle gold overlay vignette on hover */}
-              <div className="absolute inset-0 bg-gradient-to-t from-mehendi-dark/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-amber-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 pointer-events-none" />
             </div>
 
-            {/* Micro Floating Badge */}
-            <div className="absolute bottom-6 -left-4 bg-white/95 backdrop-blur shadow-xl border border-mehendi-gold/30 rounded-2xl p-4 flex items-center space-x-3 animate-float-medium max-w-[190px]">
-              <div className="w-10 h-10 rounded-full bg-mehendi-gold/20 flex items-center justify-center shrink-0">
-                <Sparkles className="h-5 w-5 text-mehendi-gold" />
+            {/* Floating Badge */}
+            <div className="absolute bottom-4 -left-2 sm:bottom-6 sm:-left-4 bg-white/95 backdrop-blur shadow-xl border border-amber-300/50 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 flex items-center space-x-2 sm:space-x-3 animate-float-medium max-w-[140px] sm:max-w-[190px]">
+              <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                <Sparkles className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-amber-600" />
               </div>
               <div className="flex flex-col">
-                <span className="font-serif font-bold text-sm text-mehendi-darker">100% Organic</span>
-                <span className="text-[10px] text-mehendi-olive font-light">Skin-Safe Natural Henna</span>
+                <span className="font-serif font-bold text-xs sm:text-sm text-mehendi-darker leading-tight">100% Organic</span>
+                <span className="text-[8px] sm:text-[10px] text-mehendi-olive font-light leading-normal">
+                  <span className="hidden sm:inline">Skin-Safe </span>Natural Henna
+                </span>
               </div>
             </div>
 
-            {/* Arched Border Corner Ornaments */}
-            <div className="absolute top-0 right-4 text-mehendi-gold/40 animate-pulse hidden md:block">
+            <div className="absolute top-0 right-4 text-amber-500/40 animate-pulse hidden md:block">
               <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1">
                 <path d="M0,0 C20,0 40,20 40,40" />
                 <path d="M10,0 C20,10 30,20 30,40" />
               </svg>
             </div>
-          </motion.div>
+          </div>
 
         </div>
       </div>

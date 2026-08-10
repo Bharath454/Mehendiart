@@ -16,12 +16,13 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Chennai Mehendi Art | Premium Bridal Henna Artist",
+  title: "Chennai Mehendi Art",
   description: "Creating beautiful bridal memories with elegant, premium Mehendi designs in Chennai. Book custom packages, traditional Indian, Arabic, and event guest henna.",
   keywords: "Mehendi Artist Chennai, Bridal Mehendi, Arabic Mehendi, Indian Mehendi, Wedding Mehendi, Bridal Henna Artist, Mehendi Booking",
   metadataBase: new URL("https://chennaimehendiart.com"),
+
   openGraph: {
-    title: "Chennai Mehendi Art | Premium Bridal Henna Artist",
+    title: "Chennai Mehendi Art",
     description: "Creating beautiful bridal memories with elegant, premium Mehendi designs in Chennai.",
     type: "website",
     locale: "en_IN",
@@ -32,6 +33,7 @@ export const viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  themeColor: "#FAF9F6",
 };
 
 export default function RootLayout({
@@ -44,10 +46,60 @@ export default function RootLayout({
       lang="en"
       className={`${playfair.variable} ${montserrat.variable} h-full antialiased scroll-smooth`}
     >
+      <head>
+        <meta name="theme-color" content="#FAF9F6" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var key = '__scrollY';
+                  if ('scrollRestoration' in history) {
+                    history.scrollRestoration = 'manual';
+                  }
+                  
+                  var pos = null;
+                  try {
+                    pos = sessionStorage.getItem(key);
+                  } catch (e) {}
+                  
+                  var restoring = !!pos;
+                  var targetY = pos ? parseInt(pos, 10) : 0;
+                  
+                  // Restore scroll position on page load
+                  if (restoring) {
+                    // Small delay to let the server-rendered DOM settle
+                    setTimeout(function() {
+                      window.scrollTo(0, targetY);
+                      restoring = false;
+                    }, 120);
+                  }
+
+                  // Capture scroll position on user scroll events, but ignore while restoring
+                  var timeout;
+                  window.addEventListener('scroll', function() {
+                    if (restoring) return;
+                    clearTimeout(timeout);
+                    timeout = setTimeout(function() {
+                      try {
+                        sessionStorage.setItem(key, String(Math.round(window.scrollY)));
+                      } catch (e) {}
+                    }, 100);
+                  }, { passive: true });
+                } catch (err) {
+                  console.warn('Scroll restoration script error:', err);
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-mehendi-bg text-mehendi-darker relative bg-henna-pattern select-none md:select-text">
         <CustomCursor />
         <FloatingWhatsApp />
-        {children}
+        <div className="w-full overflow-x-hidden flex flex-col min-h-screen relative">
+          {children}
+        </div>
       </body>
     </html>
   );

@@ -11,6 +11,12 @@ export function getJWTSecret(): string {
       "Set a strong random secret in .env.local before running the app."
     );
   }
+  if (secret.length < 32) {
+    throw new Error(
+      "FATAL: JWT_SECRET key strength check failed. " +
+      "Your JWT_SECRET must be at least 32 characters long to be secure."
+    );
+  }
   return secret;
 }
 

@@ -28,8 +28,8 @@ const MONGODB_URI = env.MONGODB_URI;
 const CLOUDINARY_CLOUD_NAME = env.CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_API_KEY = env.CLOUDINARY_API_KEY;
 const CLOUDINARY_API_SECRET = env.CLOUDINARY_API_SECRET;
-const ADMIN_EMAIL = env.ADMIN_EMAIL || 'shahirabanu1706@gmail.com';
-const ADMIN_PASSWORD = env.ADMIN_PASSWORD || 'Shadi@Nail';
+const ADMIN_EMAIL = env.ADMIN_EMAIL || 'admin@example.com';
+const ADMIN_PASSWORD = env.ADMIN_PASSWORD || 'AdminPassword123';
 
 if (!MONGODB_URI || !CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
   console.error("❌ Error: Missing MongoDB or Cloudinary credentials in .env.local!");

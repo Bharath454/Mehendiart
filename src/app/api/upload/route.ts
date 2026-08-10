@@ -1,13 +1,28 @@
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { requireAdmin, authErrorResponse } from "@/lib/auth";
+import { promises as fs } from "fs";
+import path from "path";
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+const isCloudinaryConfigured =
+  !!(process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_CLOUD_NAME !== "your-cloud-name" &&
+  process.env.CLOUDINARY_CLOUD_NAME.trim() !== "" &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_KEY !== "your-api-key" &&
+  process.env.CLOUDINARY_API_KEY.trim() !== "" &&
+  process.env.CLOUDINARY_API_SECRET &&
+  process.env.CLOUDINARY_API_SECRET !== "your-api-secret" &&
+  process.env.CLOUDINARY_API_SECRET.trim() !== "");
+
+// Configure Cloudinary only if valid credentials are provided
+if (isCloudinaryConfigured) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+}
 
 // Allowed MIME types and extensions for uploaded images
 const ALLOWED_MIME_TYPES = new Set([
@@ -69,31 +84,72 @@ export async function POST(request: Request) {
       );
     }
 
-    // Upload using Cloudinary upload_stream
-    const uploadResult = await new Promise<any>((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: "mehendiart", // Store in a specific folder on Cloudinary
-          format: "webp",       // Convert everything to webp for performance
-        },
-        (error, result) => {
-          if (error) return reject(error);
-          resolve(result);
-        }
-      );
-      
-      uploadStream.end(buffer);
-    });
+    let imageUrl = "";
+
+    if (isCloudinaryConfigured) {
+      try {
+        // Upload using Cloudinary upload_stream
+        const uploadResult = await new Promise<any>((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: "mehendiart", // Store in a specific folder on Cloudinary
+              format: "webp",       // Convert everything to webp for performance
+            },
+            (error, result) => {
+              if (error) return reject(error);
+              resolve(result);
+            }
+          );
+          
+          uploadStream.end(buffer);
+        });
+        imageUrl = uploadResult.secure_url;
+      } catch (cloudinaryError) {
+        console.warn("Cloudinary upload failed, falling back to local storage:", cloudinaryError);
+        imageUrl = await saveFileLocally(buffer, file.name, file.type);
+      }
+    } else {
+      console.log("Cloudinary is not configured. Saving file to local storage instead.");
+      imageUrl = await saveFileLocally(buffer, file.name, file.type);
+    }
 
     return NextResponse.json({
       success: true,
-      url: uploadResult.secure_url, // Return the Cloudinary URL
+      url: imageUrl, // Return the uploaded image URL (Cloudinary or local /uploads/...)
       message: "File uploaded successfully",
     });
   } catch (err: any) {
     console.error("Upload API Error:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
+}
+
+/**
+ * Helper to save uploaded files locally to the public/uploads directory.
+ */
+async function saveFileLocally(buffer: Buffer, originalFilename: string, mimeType: string): Promise<string> {
+  let uploadsDir = path.join(process.cwd(), "public", "uploads");
+  
+  // If running from the workspace root, adjust the path to point inside the mehendiart folder
+  const workspaceRootPublic = path.join(process.cwd(), "mehendiart", "public");
+  try {
+    const stat = await fs.stat(workspaceRootPublic);
+    if (stat.isDirectory()) {
+      uploadsDir = path.join(process.cwd(), "mehendiart", "public", "uploads");
+    }
+  } catch (err) {}
+
+  await fs.mkdir(uploadsDir, { recursive: true });
+
+  const ext = originalFilename.split(".").pop() || mimeType.split("/")[1] || "png";
+  const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+  const baseName = originalFilename.substring(0, originalFilename.lastIndexOf('.')) || originalFilename;
+  const cleanBase = baseName.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase();
+  const filename = `${cleanBase}-${uniqueSuffix}.${ext}`;
+
+  const filePath = path.join(uploadsDir, filename);
+  await fs.writeFile(filePath, buffer);
+  return `/uploads/${filename}`;
 }
 
 /**

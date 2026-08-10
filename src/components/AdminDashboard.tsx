@@ -62,6 +62,40 @@ interface Inquiry {
 export default function AdminDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("overview");
+
+  const formatSafeDate = (dateStr: any, options?: Intl.DateTimeFormatOptions): string => {
+    if (!dateStr) return "N/A";
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return "N/A";
+      return d.toLocaleDateString('en-IN', options || { dateStyle: 'short' });
+    } catch {
+      return "N/A";
+    }
+  };
+
+  const formatSafeMonth = (dateStr: any): string => {
+    if (!dateStr) return "N/A";
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return "N/A";
+      return d.toLocaleDateString('en-US', { month: 'short' });
+    } catch {
+      return "N/A";
+    }
+  };
+
+  const formatSafeDay = (dateStr: any): string => {
+    if (!dateStr) return "";
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return "";
+      return d.getDate().toString();
+    } catch {
+      return "";
+    }
+  };
+
   const [bookings, setBookings] = useState<any[]>([]);
   const [blockedDates, setBlockedDates] = useState<string[]>([]);
   const [pricing, setPricing] = useState<any>(null);
@@ -426,7 +460,7 @@ export default function AdminDashboard() {
   // Exports
   const exportToPDF = () => {
     const doc = new jsPDF();
-    doc.text("Chennai Mehendi Art - Bookings Report", 14, 15);
+    doc.text("Shahira Mehandi - Bookings Report", 14, 15);
     const tableData = filteredBookings.map(b => [
       b.id, b.date, b.name, b.mobile, b.packageOrGuest, b.price, b.status
     ]);
@@ -459,39 +493,57 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[#FDFCFB] flex flex-col md:flex-row overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-mehendi-darker text-white p-6 flex flex-col z-20 shrink-0">
-        <div className="flex items-center space-x-3 mb-8">
+      <aside className="w-full md:w-64 bg-mehendi-darker text-white p-4 md:p-6 flex flex-col z-20 shrink-0">
+        {/* Mobile Header: Logo + Logout */}
+        <div className="flex items-center justify-between w-full md:hidden mb-4 border-b border-white/10 pb-3">
+          <div className="flex items-center space-x-2">
+            <Sparkles className="h-5 w-5 text-mehendi-gold animate-pulse" />
+            <h1 className="font-serif font-bold text-sm tracking-wide text-white">Artist Admin</h1>
+          </div>
+          <button 
+            onClick={handleLogout}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-[10px] uppercase font-bold tracking-wider text-red-300 bg-red-400/10 hover:bg-red-400/20 transition-all border border-red-400/20"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            <span>Logout</span>
+          </button>
+        </div>
+
+        {/* Desktop Header */}
+        <div className="hidden md:flex items-center space-x-3 mb-8">
           <Sparkles className="h-6 w-6 text-mehendi-gold animate-pulse" />
           <h1 className="font-serif font-bold text-lg tracking-wide text-white">Artist Admin</h1>
         </div>
 
-        <nav className="flex-grow space-y-1">
+        {/* Tab Navigation links: Horizontal scrolling on mobile, vertical stack on desktop */}
+        <nav className="flex flex-row md:flex-col overflow-x-auto md:overflow-x-visible space-x-2 md:space-x-0 md:space-y-1 pb-2 md:pb-0 scrollbar-hide w-full flex-grow-0 md:flex-grow">
           {[
-            { id: "overview", label: "Overview Dashboard", icon: LayoutDashboard },
-            { id: "bookings", label: "Appointments Logs", icon: Users },
-            { id: "packages", label: "Manage Packages", icon: Briefcase },
-            { id: "designs", label: "Henna Designs", icon: Sparkles },
-            { id: "inquiries", label: "Customer Inquiries", icon: Mail },
-            { id: "calendar", label: "Availability Calendar", icon: CalendarIcon },
+            { id: "overview", label: "Overview", icon: LayoutDashboard },
+            { id: "bookings", label: "Appointments", icon: Users },
+            { id: "packages", label: "Bride Mehendi", icon: Briefcase },
+            { id: "designs", label: "Guest Mehendi", icon: Sparkles },
+            { id: "inquiries", label: "Inquiries", icon: Mail },
+            { id: "calendar", label: "Calendar", icon: CalendarIcon },
           ].map((item) => (
             <button
               key={item.id}
               onClick={() => { setActiveTab(item.id as Tab); setActionMessage(""); }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all text-xs font-semibold uppercase tracking-wider ${
+              className={`whitespace-nowrap flex-shrink-0 flex items-center space-x-2.5 px-4 py-2.5 md:py-3 rounded-xl transition-all text-[11px] md:text-xs font-semibold uppercase tracking-wider ${
                 activeTab === item.id 
                   ? "bg-mehendi-gold text-mehendi-darker font-bold shadow-lg" 
                   : "hover:bg-white/10 text-white/70"
               }`}
             >
-              <item.icon className="h-4.5 w-4.5 shrink-0" />
+              <item.icon className="h-4 w-4 shrink-0" />
               <span>{item.label}</span>
             </button>
           ))}
         </nav>
 
+        {/* Desktop Logout Button */}
         <button 
           onClick={handleLogout}
-          className="mt-6 flex items-center space-x-3 px-4 py-3 rounded-xl text-xs uppercase font-bold tracking-wider text-white/60 hover:text-red-400 hover:bg-red-400/10 transition-all"
+          className="hidden md:flex mt-6 items-center space-x-3 px-4 py-3 rounded-xl text-xs uppercase font-bold tracking-wider text-white/60 hover:text-red-400 hover:bg-red-400/10 transition-all"
         >
           <LogOut className="h-4.5 w-4.5 shrink-0" />
           <span>Logout Portal</span>
@@ -499,19 +551,19 @@ export default function AdminDashboard() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-grow p-4 md:p-8 overflow-y-auto h-screen relative">
+      <main className="flex-grow p-4 md:p-8 overflow-y-auto h-auto md:h-screen relative">
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 border-b border-mehendi-gold/10 pb-4">
           <div>
             <h2 className="text-2xl font-serif font-bold text-mehendi-darker capitalize">
               {activeTab === "overview" && "System Overview"}
               {activeTab === "bookings" && "Appointments Ledger"}
-              {activeTab === "packages" && "Service Packages Administration"}
-              {activeTab === "designs" && "Henna Art Collections"}
+              {activeTab === "packages" && "Bride Mehendi Packages"}
+              {activeTab === "designs" && "Guest Mehendi Designs"}
               {activeTab === "inquiries" && "Customer Inquiry Inbox"}
               {activeTab === "calendar" && "Studio Calendar Slots"}
             </h2>
             <p className="text-xs text-mehendi-olive font-light tracking-wide mt-1">
-              Chennai Mehendi Art Portal • {new Date().toLocaleDateString('en-IN', { dateStyle: 'full' })}
+              Shahira Mehandi Portal • {new Date().toLocaleDateString('en-IN', { dateStyle: 'full' })}
             </p>
           </div>
         </header>
@@ -540,20 +592,20 @@ export default function AdminDashboard() {
               className="space-y-6"
             >
               {/* Stats widgets */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
                 {[
                   { label: "Bookings Revenue", val: `₹${stats.revenue}`, icon: DollarSign, color: "bg-green-100 text-green-700 border border-green-200" },
                   { label: "Total Schedules", val: stats.total, icon: Users, color: "bg-blue-100 text-blue-700 border border-blue-200" },
                   { label: "Confirmed Events", val: stats.upcoming, icon: CalendarIcon, color: "bg-amber-100 text-amber-700 border border-amber-200" },
                   { label: "Reviews Pending", val: stats.pending, icon: Clock, color: "bg-purple-100 text-purple-700 border border-purple-200" },
                 ].map((stat, i) => (
-                  <div key={i} className="bg-white p-6 rounded-3xl shadow-sm border border-mehendi-gold/15 flex items-center space-x-4">
-                    <div className={`p-3.5 rounded-2xl ${stat.color}`}>
-                      <stat.icon className="h-6 w-6" />
+                  <div key={i} className="bg-white p-3 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-mehendi-gold/15 flex items-center space-x-2 sm:space-x-4">
+                    <div className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl ${stat.color} shrink-0`}>
+                      <stat.icon className="h-4 sm:h-6 w-4 sm:w-6" />
                     </div>
-                    <div>
-                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{stat.label}</p>
-                      <p className="text-xl sm:text-2xl font-serif font-bold text-mehendi-darker mt-0.5">{stat.val}</p>
+                    <div className="min-w-0">
+                      <p className="text-[8px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-wider truncate">{stat.label}</p>
+                      <p className="text-sm sm:text-2xl font-serif font-bold text-mehendi-darker mt-0.5 truncate">{stat.val}</p>
                     </div>
                   </div>
                 ))}
@@ -1053,7 +1105,7 @@ export default function AdminDashboard() {
                           <p className="text-xs text-mehendi-olive font-light font-mono mt-0.5">{inq.email} • {inq.mobile}</p>
                         </div>
                         <span className="text-[10px] text-gray-400 font-light">
-                          {new Date(inq.createdAt).toLocaleDateString('en-IN', { dateStyle: 'short' })}
+                          {formatSafeDate(inq.createdAt, { dateStyle: 'short' })}
                         </span>
                       </div>
                       <p className="text-xs text-gray-600 bg-mehendi-bg/15 p-3.5 rounded-2xl italic leading-relaxed border border-mehendi-gold/5">
@@ -1086,6 +1138,7 @@ export default function AdminDashboard() {
                   onSelectDate={handleToggleBlockDate}
                   blockedDates={blockedDates}
                   loadingBlocked={false}
+                  allowClickBlocked={true}
                 />
                 <div className="mt-6 bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-start space-x-3">
                   <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
@@ -1100,15 +1153,21 @@ export default function AdminDashboard() {
                   <h3 className="font-serif font-bold text-base text-mehendi-darker mb-4 border-b border-mehendi-gold/10 pb-2">Upcoming Confirmed Events</h3>
                   <div className="space-y-3">
                     {bookings.filter(b => {
+                      if (!b.date) return false;
                       const bDate = new Date(b.date);
+                      if (isNaN(bDate.getTime())) return false;
                       const today = new Date();
                       today.setHours(0,0,0,0);
                       return bDate >= today && b.status === "accepted";
-                    }).sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).slice(0, 5).map(b => (
+                    }).sort((a,b) => {
+                      const aTime = a.date ? new Date(a.date).getTime() : 0;
+                      const bTime = b.date ? new Date(b.date).getTime() : 0;
+                      return (isNaN(aTime) ? 0 : aTime) - (isNaN(bTime) ? 0 : bTime);
+                    }).slice(0, 5).map(b => (
                       <div key={b.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-2xl border border-transparent hover:border-mehendi-gold/10 transition-all">
                         <div className="bg-mehendi-dark text-white px-2.5 py-1.5 rounded-xl text-center min-w-[50px] shrink-0 font-medium">
-                          <p className="text-[9px] uppercase font-bold tracking-wider">{new Date(b.date).toLocaleDateString('en-US', { month: 'short' })}</p>
-                          <p className="text-sm font-bold">{new Date(b.date).getDate()}</p>
+                          <p className="text-[9px] uppercase font-bold tracking-wider">{formatSafeMonth(b.date)}</p>
+                          <p className="text-sm font-bold">{formatSafeDay(b.date)}</p>
                         </div>
                         <div className="min-w-0">
                           <p className="text-xs font-bold text-mehendi-darker truncate">{b.name}</p>

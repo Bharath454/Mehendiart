@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongoose";
 import { Inquiry } from "@/lib/models";
 import { requireAdmin, authErrorResponse } from "@/lib/auth";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 // GET /api/inquiries — Admin only
 export async function GET() {
@@ -33,6 +34,15 @@ export async function GET() {
 // POST /api/inquiries — Public (contact form submission)
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || 
+               request.headers.get("x-real-ip") || 
+               "127.0.0.1";
+
+    const limitResult = rateLimit(ip, 3, 60000); // 3 requests per minute
+    if (!limitResult.success) {
+      return rateLimitResponse(limitResult.remaining, limitResult.resetTime);
+    }
+
     const { name, email, mobile, message } = await request.json();
 
     if (!name || !email || !mobile || !message) {

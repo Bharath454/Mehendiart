@@ -70,7 +70,7 @@
       "active": true
     }
   ],
-  "adminEmail": "shahirabanu1706@gmail.com",
+  "adminEmail": "admin@example.com",
   "adminUsername": "admin",
   "adminPasswordHash": "$2b$10$KV7cgPEhrA3a.2SWb8Xgq.5uPVZRSlNKxsyzwLqIusRL1uXtaEFYG",
   "users": [],

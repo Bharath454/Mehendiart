@@ -7,18 +7,33 @@ import { requireAdmin, authErrorResponse } from "@/lib/auth";
 export async function GET() {
   try {
     await connectToDatabase();
-    const packages = await BridalPackage.find();
+    const packages = await Promise.race([
+      BridalPackage.find().lean(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("DB timeout")), 8000)
+      ),
+    ]) as any[];
     
     // Format _id to id
-    const formattedPackages = packages.map((p) => {
-      const obj = p.toObject();
-      obj.id = obj._id.toString();
-      delete obj._id;
-      delete obj.__v;
-      return obj;
+    const formattedPackages = packages.map((p: any) => {
+      return {
+        id: p._id.toString(),
+        name: p.name,
+        description: p.description,
+        price: p.price,
+        image: p.image,
+        includes: p.includes || [],
+      };
     });
 
-    return NextResponse.json({ success: true, packages: formattedPackages });
+    return NextResponse.json(
+      { success: true, packages: formattedPackages },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        },
+      }
+    );
   } catch (err: any) {
     console.error("GET Packages Error:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

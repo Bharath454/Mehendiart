@@ -33,7 +33,7 @@ export default function Footer() {
               <Sparkles className="h-6 w-6 text-mehendi-gold" />
               <div className="flex flex-col">
                 <span className="font-serif font-bold text-xl text-mehendi-bg tracking-wide">
-                  Chennai Mehendi Art
+                  Shahira Mehandi
                 </span>
                 <span className="text-[9px] tracking-[0.2em] uppercase text-mehendi-gold font-medium">
                   Premium Henna Services
@@ -157,8 +157,8 @@ export default function Footer() {
               </li>
               <li className="flex items-start space-x-3">
                 <Mail className="h-5 w-5 text-mehendi-gold shrink-0 mt-0.5" />
-                <a href="mailto:shahirabanu1706@gmail.com" className="hover:text-mehendi-gold transition-colors break-all">
-                  shahirabanu1706@gmail.com
+                <a href="mailto:info@shahiramehandi.com" className="hover:text-mehendi-gold transition-colors break-all">
+                  info@shahiramehandi.com
                 </a>
               </li>
               <li className="flex items-start space-x-3">
@@ -172,7 +172,7 @@ export default function Footer() {
 
         {/* Footer Bottom Copyright */}
         <div className="border-t border-mehendi-gold/10 mt-10 sm:mt-12 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center text-xs text-mehendi-bg/60 font-light gap-4 sm:gap-0">
-          <p>© {new Date().getFullYear()} Chennai Mehendi Art. All Rights Reserved.</p>
+          <p>© {new Date().getFullYear()} Shahira Mehandi. All Rights Reserved.</p>
           <div className="flex space-x-6">
             <Link href="/admin/login" className="hover:text-mehendi-gold transition-colors">
               Admin Login

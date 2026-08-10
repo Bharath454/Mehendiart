@@ -7,18 +7,33 @@ import { requireAdmin, authErrorResponse } from "@/lib/auth";
 export async function GET() {
   try {
     await connectToDatabase();
-    const designs = await GuestDesign.find();
+    const designs = await Promise.race([
+      GuestDesign.find().lean(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("DB timeout")), 8000)
+      ),
+    ]) as any[];
     
     // Format _id to id
-    const formattedDesigns = designs.map((d) => {
-      const obj = d.toObject();
-      obj.id = obj._id.toString();
-      delete obj._id;
-      delete obj.__v;
-      return obj;
+    const formattedDesigns = designs.map((d: any) => {
+      return {
+        id: d._id.toString(),
+        name: d.name,
+        type: d.type,
+        price: d.price,
+        image: d.image,
+        description: d.description || "",
+      };
     });
 
-    return NextResponse.json({ success: true, designs: formattedDesigns });
+    return NextResponse.json(
+      { success: true, designs: formattedDesigns },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        },
+      }
+    );
   } catch (err: any) {
     console.error("GET Designs Error:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

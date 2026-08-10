@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Sparkles, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Helper image list: 30 custom mehendi designs organized by category
@@ -181,12 +181,29 @@ export default function Gallery() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [zoomScale, setZoomScale] = useState(1);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showAllMobile, setShowAllMobile] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Filter images based on active tab category
   const filteredImages =
     activeCategory === "All"
       ? galleryImages
       : galleryImages.filter((img) => img.category === activeCategory);
+
+  const displayedImages = (isMobile && !showAllMobile)
+    ? filteredImages.slice(0, 8)
+    : filteredImages;
 
   const openLightbox = (id: string) => {
     const index = filteredImages.findIndex((img) => img.id === id);
@@ -237,76 +254,86 @@ export default function Gallery() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-12">
+        <div className="text-center max-w-2xl mx-auto mb-6">
           <h2 className="font-serif text-3xl sm:text-4xl font-bold text-mehendi-darker tracking-wide mb-4">
             Design Gallery
           </h2>
           <p className="text-mehendi-darker/70 font-light text-sm sm:text-base leading-relaxed">
-            Browse through our portfolio of intricate, hand-drawn mehendi designs. Filter by category to find the perfect styling inspiration for your occasion.
+            Meticulously planned custom bridal designs. Each pack is customized and drawn with pure hand-mixed natural organic paste for a long-lasting, deep maroon stain.
           </p>
           <div className="w-24 h-0.5 bg-mehendi-gold mx-auto mt-6" />
         </div>
 
-        {/* Filter Categories Tabs — horizontally scrollable on mobile */}
-        <div className="flex items-center justify-start sm:justify-center gap-2 mb-8 sm:mb-12 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap scrollbar-hide">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => {
-                setActiveCategory(cat);
-                closeLightbox();
-              }}
-              className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-full font-medium text-xs sm:text-sm tracking-wide transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
-                activeCategory === cat
-                  ? "bg-mehendi-dark text-mehendi-cream border border-mehendi-gold shadow-md"
-                  : "bg-white text-mehendi-dark border border-mehendi-gold/10 hover:border-mehendi-gold/40 hover:bg-mehendi-dark/5"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+        {mounted && (
+          <>
+            {/* Filter Categories Tabs — horizontally scrollable on mobile */}
+            <div className="flex items-center justify-start sm:justify-center gap-2 mb-8 sm:mb-12 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap scrollbar-hide">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => {
+                    setActiveCategory(cat);
+                    setShowAllMobile(false);
+                    closeLightbox();
+                  }}
+                  className={`px-4.5 sm:px-5 py-2.5 sm:py-2.5 rounded-full font-semibold text-[13px] sm:text-sm tracking-wide transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
+                    activeCategory === cat
+                      ? "bg-mehendi-dark text-mehendi-cream border border-mehendi-gold shadow-md"
+                      : "bg-white text-mehendi-dark border border-mehendi-gold/10 hover:border-mehendi-gold/40 hover:bg-mehendi-dark/5"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
 
-        {/* Image Grid Layout */}
-        <motion.div
-          layout
-          className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6"
-        >
-          <AnimatePresence mode="popLayout">
-            {filteredImages.map((img) => (
-              <motion.div
-                layout
-                key={img.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3 }}
-                onClick={() => openLightbox(img.id)}
-                className="relative group rounded-2xl overflow-hidden border border-mehendi-gold/10 shadow-md hover:shadow-xl transition-all duration-300 cursor-zoom-in"
-              >
-                {/* Full hand visible, div fully filled */}
-                <div className="w-full aspect-[3/4] overflow-hidden">
-                  <img
-                    src={img.src}
-                    alt={img.title}
-                    className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
-                    loading="lazy"
-                  />
+            {/* Image Grid Layout */}
+            <div
+              className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6"
+            >
+              {displayedImages.map((img) => (
+                <div
+                  key={img.id}
+                  onClick={() => openLightbox(img.id)}
+                  className="relative group rounded-2xl overflow-hidden border border-mehendi-gold/10 shadow-md hover:shadow-xl transition-all duration-300 cursor-zoom-in"
+                >
+                  {/* Full hand visible, div fully filled */}
+                  <div className="w-full aspect-[3/4] overflow-hidden">
+                    <img
+                      src={img.src}
+                      alt={img.title}
+                      className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  </div>
+                  
+                  {/* Title & Zoom Info overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 sm:p-5 z-20 pointer-events-none">
+                    <span className="text-[10px] text-mehendi-gold uppercase tracking-wider font-bold mb-1">
+                      {img.category}
+                    </span>
+                    <h4 className="font-serif font-semibold text-white text-xs sm:text-sm tracking-wide">
+                      {img.title}
+                    </h4>
+                  </div>
                 </div>
-                
-                {/* Title & Zoom Info overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 sm:p-5 z-20">
-                  <span className="text-[10px] text-mehendi-gold uppercase tracking-wider font-bold mb-1">
-                    {img.category}
-                  </span>
-                  <h4 className="font-serif font-semibold text-white text-xs sm:text-sm tracking-wide">
-                    {img.title}
-                  </h4>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
+              ))}
+            </div>
+
+            {/* More Images Button (Mobile Responsive only) */}
+            {isMobile && filteredImages.length > 8 && !showAllMobile && (
+              <div className="flex justify-center mt-8">
+                <button
+                  onClick={() => setShowAllMobile(true)}
+                  className="px-6 py-3 bg-mehendi-dark text-mehendi-cream font-medium text-xs tracking-wider uppercase rounded-full border border-mehendi-gold/45 shadow-md flex items-center justify-center gap-2 hover:bg-mehendi-darker active:scale-95 transition-all duration-300"
+                >
+                  <span>More Images</span>
+                  <ChevronDown className="h-4 w-4 text-mehendi-gold" />
+                </button>
+              </div>
+            )}
+          </>
+        )}
 
         {/* Dynamic Lightbox Modal */}
         <AnimatePresence>

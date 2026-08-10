@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
-import { Sparkles, ShoppingBag, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { Sparkles, ShoppingBag } from "lucide-react";
 
 export interface GuestDesign {
   id: string;
@@ -14,110 +13,13 @@ export interface GuestDesign {
   description?: string;
 }
 
-export default function GuestMehendi() {
-  const [designs, setDesigns] = useState<GuestDesign[]>([]);
-  const [loading, setLoading] = useState(true);
+interface GuestMehendiProps {
+  designs: GuestDesign[];
+}
 
-  const defaultDesigns: GuestDesign[] = [
-    {
-      id: "arabic-palm",
-      name: "Arabic Palm Design",
-      type: "Arabic",
-      price: 50,
-      image: "/api/local-image?name=arabic1",
-    },
-    {
-      id: "arabic-wrist",
-      name: "Arabic Wrist Design",
-      type: "Arabic",
-      price: 100,
-      image: "/api/local-image?name=arabic2",
-    },
-    {
-      id: "arabic-half",
-      name: "Arabic Half Hand",
-      type: "Arabic",
-      price: 150,
-      image: "/api/local-image?name=arabic3",
-    },
-    {
-      id: "arabic-elbow",
-      name: "Arabic Elbow Length",
-      type: "Arabic",
-      price: 250,
-      image: "/api/local-image?name=arabic4",
-    },
-    {
-      id: "indian-palm",
-      name: "Indian Palm Design",
-      type: "Indian",
-      price: 100,
-      image: "/api/local-image?name=indian1",
-    },
-    {
-      id: "indian-wrist",
-      name: "Indian Wrist Design",
-      type: "Indian",
-      price: 150,
-      image: "/api/local-image?name=indian2",
-    },
-    {
-      id: "indian-half",
-      name: "Indian Half Hand",
-      type: "Indian",
-      price: 250,
-      image: "/api/local-image?name=indian3",
-    },
-    {
-      id: "indian-threequarter",
-      name: "Indian 3/4 Hand",
-      type: "Indian",
-      price: 350,
-      image: "/api/local-image?name=indian4",
-    },
-    {
-      id: "indian-elbow",
-      name: "Indian Elbow Length",
-      type: "Indian",
-      price: 450,
-      image: "/api/local-image?name=indian5",
-    },
-  ];
-
-  useEffect(() => {
-    async function loadDesigns() {
-      try {
-        const response = await fetch("/api/designs");
-        if (response.ok) {
-          const data = await response.json();
-          if (data.designs && data.designs.length > 0) {
-            setDesigns(data.designs);
-          } else {
-            setDesigns(defaultDesigns);
-          }
-        } else {
-          setDesigns(defaultDesigns);
-        }
-      } catch (err) {
-        console.error("Error loading guest designs:", err);
-        setDesigns(defaultDesigns);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadDesigns();
-  }, []);
-
+export default function GuestMehendi({ designs }: GuestMehendiProps) {
   const arabicDesigns = designs.filter((d) => d.type === "Arabic");
   const indianDesigns = designs.filter((d) => d.type === "Indian");
-
-  if (loading) {
-    return (
-      <div className="py-20 flex justify-center items-center bg-white">
-        <Loader2 className="h-10 w-10 text-mehendi-gold animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <section id="guest-mehendi" className="py-14 sm:py-20 bg-white relative overflow-hidden w-full">
@@ -126,13 +28,13 @@ export default function GuestMehendi() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-20">
+        <div className="text-center max-w-2xl mx-auto mb-6 sm:mb-10">
           <span className="text-[10px] sm:text-xs uppercase tracking-widest text-mehendi-gold font-bold">Party & Guests</span>
           <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-mehendi-darker tracking-wide mt-2 mb-4">
             Guest Mehendi Pricing
           </h2>
           <p className="text-mehendi-darker/70 font-light text-sm sm:text-base leading-relaxed">
-            Beautiful, quick-stain designs perfect for wedding guests, baby showers, sangeets, and festive celebrations. Sourced with premium skin-friendly henna paste.
+            Meticulously planned custom bridal designs. Each pack is customized and drawn with pure hand-mixed natural organic paste for a long-lasting, deep maroon stain.
           </p>
           <div className="w-24 h-0.5 bg-mehendi-gold mx-auto mt-6" />
         </div>
@@ -149,23 +51,19 @@ export default function GuestMehendi() {
 
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {arabicDesigns.map((design, idx) => (
-              <motion.div
+              <div
                 key={`arabic-${design.id}`}
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.4, delay: idx * 0.1 }}
                 className="bg-mehendi-bg/30 rounded-2xl border border-mehendi-gold/10 hover:border-mehendi-gold/30 hover:shadow-lg transition-all duration-300 group overflow-hidden flex flex-col justify-between"
               >
-                {/* Full hand visible, div fully filled */}
-                <div className="relative w-full aspect-[3/4] overflow-hidden shrink-0">
+                {/* Image fills the container fully with a hover zoom effect */}
+                <div className="relative w-full aspect-[3/4] overflow-hidden shrink-0 bg-stone-50">
                   <img
                     src={design.image}
                     alt={design.name}
-                    className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                    className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-108"
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-black/5 group-hover:bg-black/15 transition-all pointer-events-none" />
+                  <div className="absolute inset-0 bg-black/5 group-hover:bg-black/10 transition-all pointer-events-none" />
                 </div>
                 
                 <div className="p-5 flex-grow flex flex-col justify-between bg-gradient-to-b from-white/95 to-white/70">
@@ -184,13 +82,14 @@ export default function GuestMehendi() {
 
                     <Link
                       href={`/booking?type=guest&design=arabic&sub=${design.id}`}
-                      className="p-2 rounded-full bg-mehendi-dark/5 hover:bg-mehendi-dark text-mehendi-dark hover:text-white transition-all duration-300 border border-mehendi-dark/20 hover:border-mehendi-dark"
+                      className="h-11 w-11 flex items-center justify-center rounded-full bg-mehendi-dark/5 hover:bg-mehendi-dark text-mehendi-dark hover:text-white transition-all duration-300 border border-mehendi-dark/20 hover:border-mehendi-dark active:scale-95 shrink-0"
+                      aria-label="Book this design"
                     >
-                      <ShoppingBag className="h-4 w-4" />
+                      <ShoppingBag className="h-4.5 w-4.5" />
                     </Link>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
@@ -207,23 +106,19 @@ export default function GuestMehendi() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
             {indianDesigns.map((design, idx) => (
-              <motion.div
+              <div
                 key={`indian-${design.id}`}
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.4, delay: idx * 0.08 }}
                 className="bg-mehendi-bg/30 rounded-2xl border border-mehendi-gold/10 hover:border-mehendi-gold/30 hover:shadow-lg transition-all duration-300 group overflow-hidden flex flex-col justify-between"
               >
-                {/* Full hand visible, div fully filled */}
-                <div className="relative w-full aspect-[3/4] overflow-hidden shrink-0">
+                {/* Image fills the container fully with a hover zoom effect */}
+                <div className="relative w-full aspect-[3/4] overflow-hidden shrink-0 bg-stone-50">
                   <img
                     src={design.image}
                     alt={design.name}
-                    className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                    className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-108"
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-black/5 group-hover:bg-black/15 transition-all pointer-events-none" />
+                  <div className="absolute inset-0 bg-black/5 group-hover:bg-black/10 transition-all pointer-events-none" />
                 </div>
                 
                 <div className="p-4.5 flex-grow flex flex-col justify-between bg-gradient-to-b from-white/95 to-white/70">
@@ -242,13 +137,14 @@ export default function GuestMehendi() {
 
                     <Link
                       href={`/booking?type=guest&design=indian&sub=${design.id}`}
-                      className="p-1.5 rounded-full bg-mehendi-dark/5 hover:bg-mehendi-dark text-mehendi-dark hover:text-white transition-all duration-300 border border-mehendi-dark/20 hover:border-mehendi-dark"
+                      className="h-11 w-11 flex items-center justify-center rounded-full bg-mehendi-dark/5 hover:bg-mehendi-dark text-mehendi-dark hover:text-white transition-all duration-300 border border-mehendi-dark/20 hover:border-mehendi-dark active:scale-95 shrink-0"
+                      aria-label="Book this design"
                     >
-                      <ShoppingBag className="h-3.5 w-3.5" />
+                      <ShoppingBag className="h-4.5 w-4.5" />
                     </Link>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
