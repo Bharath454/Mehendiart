@@ -48,10 +48,9 @@ function isSMTPConfigured(): boolean {
     "your_16_char_app_password_here",
     "xxxxxxxxxxxxxxxxxxxx",
     "xxxxxxxxxxxxxxxx",
+    "your_app_password_here",
   ];
-  const isPlaceholder =
-    rawPass.includes("xxxx") ||
-    PLACEHOLDERS.includes(pass.toLowerCase());
+  const isPlaceholder = PLACEHOLDERS.includes(pass.toLowerCase());
   return !!(user && pass && pass.length >= 16 && !isPlaceholder);
 }
 
@@ -278,9 +277,11 @@ export async function notifyOwnerOnBooking(booking: Booking) {
   if (isSMTPConfigured()) {
     try {
       const transporter = createTransporter();
+      // Send to ADMIN_EMAIL (the business owner), not SMTP_USER (the sender account)
+      const adminEmail = process.env.ADMIN_EMAIL || process.env.SMTP_USER || "info@shahiramehandi.com";
       await transporter.sendMail({
         from: FROM_ADDRESS,
-        to: process.env.SMTP_USER || "info@shahiramehandi.com",
+        to: adminEmail,
         subject: `📋 New Booking Alert – ${cleanName} (${cleanDate})`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 2px solid #355E3B; padding: 20px; border-radius: 12px; background: #FAF9F6;">
