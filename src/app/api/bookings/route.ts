@@ -117,9 +117,13 @@ export async function POST(request: Request) {
     const formattedBooking = newBooking.toObject();
     formattedBooking.id = formattedBooking._id.toString();
 
-    // Send confirmation email to customer & notification to owner (async, non-blocking)
-    void sendEmailConfirmation(formattedBooking as any);
-    void notifyOwnerOnBooking(formattedBooking as any);
+    // Send both emails in parallel and WAIT for them before returning.
+    // IMPORTANT: On Vercel serverless, using `void` (fire-and-forget) causes
+    // the function to terminate before the second email sends. We must await both.
+    await Promise.all([
+      sendEmailConfirmation(formattedBooking as any),
+      notifyOwnerOnBooking(formattedBooking as any),
+    ]);
 
     return NextResponse.json({
       success: true,
