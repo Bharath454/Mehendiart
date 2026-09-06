@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongoose";
 import { Booking } from "@/lib/models";
-import { sendApprovalEmail } from "@/lib/notifications";
+import { sendApprovalEmail, sendRejectionEmail } from "@/lib/notifications";
 import { requireAdmin, authErrorResponse } from "@/lib/auth";
 
 // GET /api/admin/bookings
@@ -66,9 +66,14 @@ export async function PATCH(request: Request) {
     const formattedUpdated = updated.toObject();
     formattedUpdated.id = formattedUpdated._id.toString();
 
-    // Send approval email only when transitioning to accepted
+    // Send approval email — MUST await (not void) so Vercel doesn't terminate before sending
     if (status === "accepted" && previousStatus !== "accepted") {
-      void sendApprovalEmail(formattedUpdated as any);
+      await sendApprovalEmail(formattedUpdated as any);
+    }
+
+    // Send rejection email when admin rejects a booking
+    if (status === "rejected" && previousStatus !== "rejected") {
+      await sendRejectionEmail(formattedUpdated as any);
     }
 
     return NextResponse.json({ success: true, booking: formattedUpdated });

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { Calendar, User, Phone, Mail, MapPin, FileText, Sparkles, CheckCircle2, ArrowRight, Clock, Loader2 } from "lucide-react";
 import confetti from "canvas-confetti";
@@ -49,6 +49,19 @@ export default function BookingForm() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [createdBooking, setCreatedBooking] = useState<any>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Refs for auto-focus on validation error
+  const nameRef = useRef<HTMLInputElement>(null);
+  const mobileRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const eventTypeRef = useRef<HTMLSelectElement>(null);
+  const packageNameRef = useRef<HTMLSelectElement>(null);
+  const designTypeRef = useRef<HTMLSelectElement>(null);
+  const subDesignNameRef = useRef<HTMLSelectElement>(null);
+  const addressRef = useRef<HTMLInputElement>(null);
+  const timeSectionRef = useRef<HTMLDivElement>(null);
+  const dateSectionRef = useRef<HTMLDivElement>(null);
 
   const [packages, setPackages] = useState<any[]>([]);
   const [designs, setDesigns] = useState<any[]>([]);
@@ -189,19 +202,44 @@ export default function BookingForm() {
     e.preventDefault();
     setErrorMessage("");
 
-    // Validation checks
-    if (!formData.name || !formData.mobile || !formData.email || !formData.eventType || !formData.date || !formData.timeSlot || !formData.address) {
-      setErrorMessage("Please fill in all required fields and select an available date from the calendar.");
-      return;
-    }
+    // Per-field validation
+    const errors: Record<string, string> = {};
 
-    if (formData.packageOrGuest === "package" && !formData.packageName) {
-      setErrorMessage("Please select a Bridal Package.");
-      return;
-    }
+    if (!formData.name.trim()) errors.name = "Full name is required.";
+    if (!formData.mobile.trim()) errors.mobile = "Mobile number is required.";
+    else if (!/^[0-9]{10}$/.test(formData.mobile.trim())) errors.mobile = "Enter a valid 10-digit number.";
+    if (!formData.email.trim()) errors.email = "Email address is required.";
+    if (!formData.eventType) errors.eventType = "Please select an event type.";
+    if (formData.packageOrGuest === "package" && !formData.packageName) errors.packageName = "Please select a bridal package.";
+    if (formData.packageOrGuest === "guest" && !formData.designType) errors.designType = "Please select a design style.";
+    if (formData.packageOrGuest === "guest" && formData.designType && !formData.subDesignName) errors.subDesignName = "Please select a coverage area.";
+    if (!formData.date) errors.date = "Please select an appointment date from the calendar.";
+    if (formData.date && !formData.timeSlot) errors.timeSlot = "Please choose a preferred time slot.";
+    if (!formData.address.trim()) errors.address = "Venue address is required.";
 
-    if (formData.packageOrGuest === "guest" && (!formData.designType || !formData.subDesignName)) {
-      setErrorMessage("Please select Guest Design Type and Area.");
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      // Scroll & focus to the first invalid field in order
+      const focusOrder: Array<{ key: string; ref: React.RefObject<any> }> = [
+        { key: "name", ref: nameRef },
+        { key: "mobile", ref: mobileRef },
+        { key: "email", ref: emailRef },
+        { key: "eventType", ref: eventTypeRef },
+        { key: "packageName", ref: packageNameRef },
+        { key: "designType", ref: designTypeRef },
+        { key: "subDesignName", ref: subDesignNameRef },
+        { key: "date", ref: dateSectionRef },
+        { key: "timeSlot", ref: timeSectionRef },
+        { key: "address", ref: addressRef },
+      ];
+      for (const { key, ref } of focusOrder) {
+        if (errors[key] && ref.current) {
+          ref.current.scrollIntoView({ behavior: "smooth", block: "center" });
+          setTimeout(() => ref.current?.focus?.(), 350);
+          break;
+        }
+      }
       return;
     }
 
@@ -361,15 +399,19 @@ export default function BookingForm() {
                 <span>Full Name *</span>
               </label>
               <input
+                ref={nameRef}
                 id="name"
                 name="name"
                 type="text"
                 required
                 value={formData.name}
-                onChange={handleChange}
+                onChange={(e) => { handleChange(e); setFieldErrors((prev) => ({ ...prev, name: "" })); }}
                 placeholder="e.g. Priyal Sharma"
-                className="px-4 py-2.5 rounded-xl border border-mehendi-gold/30 bg-[#1A2E22]/50 focus:border-mehendi-gold focus:ring-1 focus:ring-mehendi-gold focus:outline-none text-base lg:text-sm text-[#FCFBF9] placeholder-gray-400/70"
+                className={`px-4 py-2.5 rounded-xl border bg-[#1A2E22]/50 focus:ring-1 focus:ring-mehendi-gold focus:outline-none text-base lg:text-sm text-[#FCFBF9] placeholder-gray-400/70 transition-colors ${
+                  fieldErrors.name ? "border-red-500 focus:border-red-400" : "border-mehendi-gold/30 focus:border-mehendi-gold"
+                }`}
               />
+              {fieldErrors.name && <p className="text-red-400 text-[11px] font-medium mt-0.5 animate-fadeIn">{fieldErrors.name}</p>}
             </div>
 
             {/* Mobile */}
@@ -379,16 +421,20 @@ export default function BookingForm() {
                 <span>Mobile Number *</span>
               </label>
               <input
+                ref={mobileRef}
                 id="mobile"
                 name="mobile"
                 type="tel"
                 required
                 pattern="[0-9]{10}"
                 value={formData.mobile}
-                onChange={handleChange}
+                onChange={(e) => { handleChange(e); setFieldErrors((prev) => ({ ...prev, mobile: "" })); }}
                 placeholder="10-digit number (e.g. 9840123456)"
-                className="px-4 py-2.5 rounded-xl border border-mehendi-gold/30 bg-[#1A2E22]/50 focus:border-mehendi-gold focus:ring-1 focus:ring-mehendi-gold focus:outline-none text-base lg:text-sm text-[#FCFBF9] placeholder-gray-400/70"
+                className={`px-4 py-2.5 rounded-xl border bg-[#1A2E22]/50 focus:ring-1 focus:ring-mehendi-gold focus:outline-none text-base lg:text-sm text-[#FCFBF9] placeholder-gray-400/70 transition-colors ${
+                  fieldErrors.mobile ? "border-red-500 focus:border-red-400" : "border-mehendi-gold/30 focus:border-mehendi-gold"
+                }`}
               />
+              {fieldErrors.mobile && <p className="text-red-400 text-[11px] font-medium mt-0.5 animate-fadeIn">{fieldErrors.mobile}</p>}
             </div>
           </div>
 
@@ -400,15 +446,19 @@ export default function BookingForm() {
                 <span>Email Address *</span>
               </label>
               <input
+                ref={emailRef}
                 id="email"
                 name="email"
                 type="email"
                 required
                 value={formData.email}
-                onChange={handleChange}
+                onChange={(e) => { handleChange(e); setFieldErrors((prev) => ({ ...prev, email: "" })); }}
                 placeholder="name@domain.com"
-                className="px-4 py-2.5 rounded-xl border border-mehendi-gold/30 bg-[#1A2E22]/50 focus:border-mehendi-gold focus:ring-1 focus:ring-mehendi-gold focus:outline-none text-base lg:text-sm text-[#FCFBF9] placeholder-gray-400/70"
+                className={`px-4 py-2.5 rounded-xl border bg-[#1A2E22]/50 focus:ring-1 focus:ring-mehendi-gold focus:outline-none text-base lg:text-sm text-[#FCFBF9] placeholder-gray-400/70 transition-colors ${
+                  fieldErrors.email ? "border-red-500 focus:border-red-400" : "border-mehendi-gold/30 focus:border-mehendi-gold"
+                }`}
               />
+              {fieldErrors.email && <p className="text-red-400 text-[11px] font-medium mt-0.5 animate-fadeIn">{fieldErrors.email}</p>}
             </div>
 
             {/* Event Type */}
@@ -418,18 +468,22 @@ export default function BookingForm() {
                 <span>Event Type *</span>
               </label>
               <select
+                ref={eventTypeRef}
                 id="eventType"
                 name="eventType"
                 required
                 value={formData.eventType}
-                onChange={handleChange}
-                className="px-4 py-2.5 rounded-xl border border-mehendi-gold/30 focus:border-mehendi-gold focus:ring-1 focus:ring-mehendi-gold focus:outline-none text-base lg:text-sm bg-[#1A2E22]/80 text-[#FCFBF9] focus:bg-[#1A2E22]"
+                onChange={(e) => { handleChange(e); setFieldErrors((prev) => ({ ...prev, eventType: "" })); }}
+                className={`px-4 py-2.5 rounded-xl border focus:ring-1 focus:ring-mehendi-gold focus:outline-none text-base lg:text-sm bg-[#1A2E22]/80 text-[#FCFBF9] focus:bg-[#1A2E22] transition-colors ${
+                  fieldErrors.eventType ? "border-red-500" : "border-mehendi-gold/30 focus:border-mehendi-gold"
+                }`}
               >
                 <option value="" className="bg-[#1A2E22]">-- Select Occasion --</option>
                 {EVENT_TYPES.map((type) => (
                   <option key={type} value={type} className="bg-[#1A2E22]">{type}</option>
                 ))}
               </select>
+              {fieldErrors.eventType && <p className="text-red-400 text-[11px] font-medium mt-0.5 animate-fadeIn">{fieldErrors.eventType}</p>}
             </div>
           </div>
 
@@ -467,11 +521,14 @@ export default function BookingForm() {
             <div className="flex flex-col space-y-1.5 animate-fadeIn">
               <label htmlFor="packageName" className="text-xs font-semibold text-[#FCFBF9]/90 uppercase tracking-wider">Select Bridal Package *</label>
               <select
+                ref={packageNameRef}
                 id="packageName"
                 name="packageName"
                 value={formData.packageName}
-                onChange={handleChange}
-                className="px-4 py-2.5 rounded-xl border border-mehendi-gold/30 focus:border-mehendi-gold focus:ring-1 focus:ring-mehendi-gold focus:outline-none text-base lg:text-sm bg-[#1A2E22]/80 text-[#FCFBF9] focus:bg-[#1A2E22]"
+                onChange={(e) => { handleChange(e); setFieldErrors((prev) => ({ ...prev, packageName: "" })); }}
+                className={`px-4 py-2.5 rounded-xl border focus:ring-1 focus:ring-mehendi-gold focus:outline-none text-base lg:text-sm bg-[#1A2E22]/80 text-[#FCFBF9] focus:bg-[#1A2E22] transition-colors ${
+                  fieldErrors.packageName ? "border-red-500" : "border-mehendi-gold/30 focus:border-mehendi-gold"
+                }`}
               >
                 <option value="" className="bg-[#1A2E22]">-- Select Package --</option>
                 {packages.length > 0 ? (
@@ -488,6 +545,7 @@ export default function BookingForm() {
                   </>
                 )}
               </select>
+              {fieldErrors.packageName && <p className="text-red-400 text-[11px] font-medium mt-0.5 animate-fadeIn">{fieldErrors.packageName}</p>}
             </div>
           ) : (
             /* Guest Mehendi selector */
@@ -496,28 +554,35 @@ export default function BookingForm() {
               <div className="flex flex-col space-y-1.5">
                 <label htmlFor="designType" className="text-xs font-semibold text-[#FCFBF9]/90 uppercase tracking-wider">Design Style *</label>
                 <select
+                  ref={designTypeRef}
                   id="designType"
                   name="designType"
                   value={formData.designType}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, designType: e.target.value, subDesignName: "" }))}
-                  className="px-4 py-2.5 rounded-xl border border-mehendi-gold/30 focus:border-mehendi-gold focus:ring-1 focus:ring-mehendi-gold focus:outline-none text-base lg:text-sm bg-[#1A2E22]/80 text-[#FCFBF9] focus:bg-[#1A2E22]"
+                  onChange={(e) => { setFormData((prev) => ({ ...prev, designType: e.target.value, subDesignName: "" })); setFieldErrors((prev) => ({ ...prev, designType: "", subDesignName: "" })); }}
+                  className={`px-4 py-2.5 rounded-xl border focus:ring-1 focus:ring-mehendi-gold focus:outline-none text-base lg:text-sm bg-[#1A2E22]/80 text-[#FCFBF9] focus:bg-[#1A2E22] transition-colors ${
+                    fieldErrors.designType ? "border-red-500" : "border-mehendi-gold/30 focus:border-mehendi-gold"
+                  }`}
                 >
                   <option value="" className="bg-[#1A2E22]">-- Style --</option>
                   <option value="Arabic" className="bg-[#1A2E22]">Arabic Designs</option>
                   <option value="Indian" className="bg-[#1A2E22]">Traditional Indian</option>
                 </select>
+                {fieldErrors.designType && <p className="text-red-400 text-[11px] font-medium mt-0.5 animate-fadeIn">{fieldErrors.designType}</p>}
               </div>
 
               {/* Sub Design Area */}
               <div className="flex flex-col space-y-1.5">
                 <label htmlFor="subDesignName" className="text-xs font-semibold text-[#FCFBF9]/90 uppercase tracking-wider">Coverage Area *</label>
                 <select
+                  ref={subDesignNameRef}
                   id="subDesignName"
                   name="subDesignName"
                   value={formData.subDesignName}
                   disabled={!formData.designType}
-                  onChange={handleChange}
-                  className="px-4 py-2.5 rounded-xl border border-mehendi-gold/30 focus:border-mehendi-gold focus:ring-1 focus:ring-mehendi-gold focus:outline-none text-base lg:text-sm bg-[#1A2E22]/80 text-[#FCFBF9] disabled:opacity-50 disabled:cursor-not-allowed focus:bg-[#1A2E22]"
+                  onChange={(e) => { handleChange(e); setFieldErrors((prev) => ({ ...prev, subDesignName: "" })); }}
+                  className={`px-4 py-2.5 rounded-xl border focus:ring-1 focus:ring-mehendi-gold focus:outline-none text-base lg:text-sm bg-[#1A2E22]/80 text-[#FCFBF9] disabled:opacity-50 disabled:cursor-not-allowed focus:bg-[#1A2E22] transition-colors ${
+                    fieldErrors.subDesignName ? "border-red-500" : "border-mehendi-gold/30 focus:border-mehendi-gold"
+                  }`}
                 >
                   <option value="" className="bg-[#1A2E22]">-- Area --</option>
                   {designs.length > 0 ? (
@@ -545,12 +610,13 @@ export default function BookingForm() {
                     </>
                   )}
                 </select>
+                {fieldErrors.subDesignName && <p className="text-red-400 text-[11px] font-medium mt-0.5 animate-fadeIn">{fieldErrors.subDesignName}</p>}
               </div>
             </div>
           )}
 
           {/* Time Slot Visual Card Picker */}
-          <div className="flex flex-col space-y-2">
+          <div ref={timeSectionRef} className="flex flex-col space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold text-[#FCFBF9]/90 uppercase tracking-wider flex items-center space-x-1">
                 <Clock className="h-3.5 w-3.5 text-mehendi-gold" />
@@ -614,6 +680,7 @@ export default function BookingForm() {
                 })}
               </div>
             )}
+            {fieldErrors.timeSlot && <p className="text-red-400 text-[11px] font-medium mt-0.5 animate-fadeIn">{fieldErrors.timeSlot}</p>}
           </div>
 
           {/* Venue Address */}
@@ -623,15 +690,19 @@ export default function BookingForm() {
               <span>Venue Address *</span>
             </label>
             <input
+              ref={addressRef}
               id="address"
               name="address"
               type="text"
               required
               value={formData.address}
-              onChange={handleChange}
+              onChange={(e) => { handleChange(e); setFieldErrors((prev) => ({ ...prev, address: "" })); }}
               placeholder="Full venue details in Chennai, Tamil Nadu"
-              className="px-4 py-2.5 rounded-xl border border-mehendi-gold/30 bg-[#1A2E22]/50 focus:border-mehendi-gold focus:ring-1 focus:ring-mehendi-gold focus:outline-none text-base lg:text-sm text-[#FCFBF9] placeholder-gray-400/70"
+              className={`px-4 py-2.5 rounded-xl border bg-[#1A2E22]/50 focus:ring-1 focus:ring-mehendi-gold focus:outline-none text-base lg:text-sm text-[#FCFBF9] placeholder-gray-400/70 transition-colors ${
+                fieldErrors.address ? "border-red-500 focus:border-red-400" : "border-mehendi-gold/30 focus:border-mehendi-gold"
+              }`}
             />
+            {fieldErrors.address && <p className="text-red-400 text-[11px] font-medium mt-0.5 animate-fadeIn">{fieldErrors.address}</p>}
           </div>
 
           {/* Notes */}
@@ -652,13 +723,14 @@ export default function BookingForm() {
           </div>
 
           {/* Selected Date display */}
-          <div className="flex items-center space-x-3 pt-2">
+          <div ref={dateSectionRef} className="flex items-center space-x-3 pt-2">
             <Calendar className="h-5 w-5 text-mehendi-gold shrink-0" />
             <div className="flex flex-col">
               <span className="text-xs text-[#FCFBF9]/80 font-semibold uppercase tracking-wider">Selected Date</span>
-              <span className="text-sm font-bold text-mehendi-gold">
+              <span className={`text-sm font-bold ${fieldErrors.date ? "text-red-400" : "text-mehendi-gold"}`}>
                 {formData.date ? formData.date : <>Please pick from the calendar <span className="hidden lg:inline">→</span><span className="lg:hidden">below</span></>}
               </span>
+              {fieldErrors.date && <span className="text-red-400 text-[11px] font-medium animate-fadeIn ml-2">{fieldErrors.date}</span>}
             </div>
           </div>
 

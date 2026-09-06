@@ -22,7 +22,9 @@ import {
   Image as ImageIcon,
   Edit2,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  MessageSquare,
+  Phone
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import jsPDF from "jspdf";
@@ -236,6 +238,36 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteBooking = async (id: string) => {
+    if (!confirm("Delete this booking? This cannot be undone.")) return;
+    try {
+      const res = await authFetch(`/api/admin/bookings?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setActionMessage("Booking deleted successfully.");
+        fetchDashboardData();
+      } else {
+        const data = await res.json();
+        setActionMessage(`Error: ${data.error || "Delete failed"}`);
+      }
+    } catch (err: any) {
+      if (err?.message !== "Unauthorized") console.error("Delete booking error", err);
+    }
+  };
+
+  const handleDeleteAllBookings = async () => {
+    const count = bookings.length;
+    if (!confirm(`Delete ALL ${count} booking(s)? This permanently removes every booking from the database and cannot be undone.`)) return;
+    try {
+      // Delete one-by-one using existing DELETE endpoint
+      await Promise.all(bookings.map(b => authFetch(`/api/admin/bookings?id=${b.id}`, { method: "DELETE" })));
+      setActionMessage(`All ${count} booking(s) deleted successfully.`);
+      fetchDashboardData();
+    } catch (err: any) {
+      if (err?.message !== "Unauthorized") console.error("Delete all bookings error", err);
+      setActionMessage("Some bookings could not be deleted.");
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
@@ -427,7 +459,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Stats calculation
   const stats = useMemo(() => {
     const total = bookings.length;
     const pending = bookings.filter(b => b.status === "pending").length;
@@ -441,9 +472,10 @@ export default function AdminDashboard() {
       today.setHours(0, 0, 0, 0);
       return bDate >= today && b.status === "accepted";
     }).length;
+    const totalInquiries = inquiries.length;
 
-    return { total, pending, accepted, revenue, upcoming };
-  }, [bookings]);
+    return { total, pending, accepted, revenue, upcoming, totalInquiries };
+  }, [bookings, inquiries]);
 
   // Filtering bookings
   const filteredBookings = useMemo(() => {
@@ -598,6 +630,7 @@ export default function AdminDashboard() {
                   { label: "Total Schedules", val: stats.total, icon: Users, color: "bg-blue-100 text-blue-700 border border-blue-200" },
                   { label: "Confirmed Events", val: stats.upcoming, icon: CalendarIcon, color: "bg-amber-100 text-amber-700 border border-amber-200" },
                   { label: "Reviews Pending", val: stats.pending, icon: Clock, color: "bg-purple-100 text-purple-700 border border-purple-200" },
+                  { label: "Inquiries", val: stats.totalInquiries, icon: MessageSquare, color: "bg-rose-100 text-rose-700 border border-rose-200" },
                 ].map((stat, i) => (
                   <div key={i} className="bg-white p-3 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-mehendi-gold/15 flex items-center space-x-2 sm:space-x-4">
                     <div className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl ${stat.color} shrink-0`}>
@@ -696,6 +729,7 @@ export default function AdminDashboard() {
                   <button onClick={exportToPDF} className="p-2.5 rounded-2xl bg-mehendi-bg text-mehendi-dark hover:bg-mehendi-dark hover:text-white transition-all border border-mehendi-gold/20" title="Export PDF">
                     <FileDown className="h-4.5 w-4.5" />
                   </button>
+
                 </div>
               </div>
 
@@ -711,7 +745,7 @@ export default function AdminDashboard() {
                         <th className="px-6 py-4">Design selection</th>
                         <th className="px-6 py-4">Price</th>
                         <th className="px-6 py-4">Status</th>
-                        <th className="px-6 py-4 text-right">Review Status</th>
+                        <th className="px-6 py-4 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 text-sm">
@@ -736,16 +770,41 @@ export default function AdminDashboard() {
                           </td>
                           <td className="px-6 py-4 text-right">
                             <div className="flex justify-end space-x-1.5">
+                              {/* WhatsApp quick contact */}
+                              <a
+                                href={`https://wa.me/91${b.mobile}?text=Hi%20${encodeURIComponent(b.name)}%2C%20this%20is%20Shahira%20Mehandi%20regarding%20your%20booking%20ID%20${b.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1 rounded-xl bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-all"
+                                title={`WhatsApp ${b.name}`}
+                              >
+                                <Phone className="h-4 w-4" />
+                              </a>
+                              {/* Email quick contact */}
+                              <a
+                                href={`mailto:${b.email}?subject=Your%20Booking%20at%20Shahira%20Mehandi%20(ID:%20${b.id})`}
+                                className="p-1 rounded-xl bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white transition-all"
+                                title={`Email ${b.name}`}
+                              >
+                                <Mail className="h-4 w-4" />
+                              </a>
                               {b.status === "pending" && (
-                                <button onClick={() => handleUpdateStatus(b.id, "accepted")} className="p-1 rounded-xl bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-all">
+                                <button onClick={() => handleUpdateStatus(b.id, "accepted")} className="p-1 rounded-xl bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-all" title="Accept">
                                   <CheckCircle className="h-4 w-4" />
                                 </button>
                               )}
                               {b.status !== "rejected" && b.status !== "cancelled" && (
-                                <button onClick={() => handleUpdateStatus(b.id, "rejected")} className="p-1 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all">
+                                <button onClick={() => handleUpdateStatus(b.id, "rejected")} className="p-1 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all" title="Reject">
                                   <XCircle className="h-4 w-4" />
                                 </button>
                               )}
+                              <button
+                                onClick={() => handleDeleteBooking(b.id)}
+                                className="p-1 rounded-xl bg-gray-50 text-gray-400 hover:bg-red-500 hover:text-white transition-all"
+                                title="Delete booking"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -1095,6 +1154,16 @@ export default function AdminDashboard() {
               animate={{ opacity: 1 }}
               className="space-y-4"
             >
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-gray-500 font-light">{inquiries.length} message{inquiries.length !== 1 ? 's' : ''} received</p>
+                <button
+                  onClick={fetchDashboardData}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-mehendi-bg text-mehendi-dark text-xs font-bold hover:bg-mehendi-dark hover:text-white transition-all border border-mehendi-gold/20"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  <span>Refresh</span>
+                </button>
+              </div>
               {inquiries.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {inquiries.map((inq) => (
@@ -1111,6 +1180,25 @@ export default function AdminDashboard() {
                       <p className="text-xs text-gray-600 bg-mehendi-bg/15 p-3.5 rounded-2xl italic leading-relaxed border border-mehendi-gold/5">
                         "{inq.message}"
                       </p>
+                      {/* Quick Reply Buttons */}
+                      <div className="flex space-x-2 pt-1">
+                        <a
+                          href={`https://wa.me/91${inq.mobile}?text=Hi%20${encodeURIComponent(inq.name)}%2C%20this%20is%20Shahira%20Mehandi.%20Thank%20you%20for%20your%20message!`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-green-50 text-green-700 hover:bg-green-600 hover:text-white transition-all text-[10px] font-bold uppercase tracking-wide border border-green-200"
+                        >
+                          <Phone className="h-3 w-3" />
+                          <span>WhatsApp Reply</span>
+                        </a>
+                        <a
+                          href={`mailto:${inq.email}?subject=Re:%20Your%20Inquiry%20to%20Shahira%20Mehandi`}
+                          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white transition-all text-[10px] font-bold uppercase tracking-wide border border-blue-200"
+                        >
+                          <Mail className="h-3 w-3" />
+                          <span>Email Reply</span>
+                        </a>
+                      </div>
                     </div>
                   ))}
                 </div>

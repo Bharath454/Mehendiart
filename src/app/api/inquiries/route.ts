@@ -3,6 +3,7 @@ import connectToDatabase from "@/lib/mongoose";
 import { Inquiry } from "@/lib/models";
 import { requireAdmin, authErrorResponse } from "@/lib/auth";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { notifyAdminOnInquiry } from "@/lib/notifications";
 
 // GET /api/inquiries — Admin only
 export async function GET() {
@@ -77,6 +78,9 @@ export async function POST(request: Request) {
     
     const formattedInquiry = newInquiry.toObject();
     formattedInquiry.id = formattedInquiry._id.toString();
+
+    // Notify admin about the new inquiry (fire-and-forget is safe here — non-critical)
+    void notifyAdminOnInquiry(formattedInquiry as any);
 
     return NextResponse.json({ success: true, inquiry: formattedInquiry });
   } catch (err: any) {
