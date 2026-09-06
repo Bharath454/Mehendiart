@@ -306,7 +306,7 @@ export default function AdminDashboard() {
     else setDesignUploading(true);
 
     try {
-      const res = await fetch("/api/upload", {
+      const res = await authFetch("/api/upload", {
         method: "POST",
         body: formData
       });
@@ -317,13 +317,15 @@ export default function AdminDashboard() {
         } else {
           setDesignForm(prev => ({ ...prev, image: data.url }));
         }
-        setActionMessage("Image uploaded successfully");
+        setActionMessage("Image uploaded successfully!");
       } else {
         alert(data.error || "Upload failed");
       }
-    } catch (err) {
-      console.error("Upload error:", err);
-      alert("Error uploading image");
+    } catch (err: any) {
+      if (err?.message !== "Unauthorized") {
+        console.error("Upload error:", err);
+        alert(err?.message || "Error uploading image");
+      }
     } finally {
       setPackageUploading(false);
       setDesignUploading(false);

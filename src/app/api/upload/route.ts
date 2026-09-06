@@ -4,24 +4,22 @@ import { requireAdmin, authErrorResponse } from "@/lib/auth";
 import { promises as fs } from "fs";
 import path from "path";
 
-const isCloudinaryConfigured =
-  !!(process.env.CLOUDINARY_CLOUD_NAME &&
-  process.env.CLOUDINARY_CLOUD_NAME !== "your-cloud-name" &&
-  process.env.CLOUDINARY_CLOUD_NAME.trim() !== "" &&
-  process.env.CLOUDINARY_API_KEY &&
-  process.env.CLOUDINARY_API_KEY !== "your-api-key" &&
-  process.env.CLOUDINARY_API_KEY.trim() !== "" &&
-  process.env.CLOUDINARY_API_SECRET &&
-  process.env.CLOUDINARY_API_SECRET !== "your-api-secret" &&
-  process.env.CLOUDINARY_API_SECRET.trim() !== "");
+function getIsCloudinaryConfigured(): boolean {
+  const name = process.env.CLOUDINARY_CLOUD_NAME;
+  const key = process.env.CLOUDINARY_API_KEY;
+  const secret = process.env.CLOUDINARY_API_SECRET;
 
-// Configure Cloudinary only if valid credentials are provided
-if (isCloudinaryConfigured) {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  });
+  return !!(
+    name &&
+    name !== "your-cloud-name" &&
+    name.trim() !== "" &&
+    key &&
+    key !== "your-api-key" &&
+    key.trim() !== "" &&
+    secret &&
+    secret !== "your-api-secret" &&
+    secret.trim() !== ""
+  );
 }
 
 // Allowed MIME types and extensions for uploaded images
@@ -71,7 +69,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // ─── Read & Upload to Cloudinary ────────────────────────────────────────
+    // ─── Read & Upload ─────────────────────────────────────────────────────
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
@@ -85,9 +83,16 @@ export async function POST(request: Request) {
     }
 
     let imageUrl = "";
+    const isCloudinaryConfigured = getIsCloudinaryConfigured();
 
     if (isCloudinaryConfigured) {
       try {
+        cloudinary.config({
+          cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+          api_key: process.env.CLOUDINARY_API_KEY,
+          api_secret: process.env.CLOUDINARY_API_SECRET,
+        });
+
         // Upload using Cloudinary upload_stream
         const uploadResult = await new Promise<any>((resolve, reject) => {
           const uploadStream = cloudinary.uploader.upload_stream(
@@ -104,13 +109,28 @@ export async function POST(request: Request) {
           uploadStream.end(buffer);
         });
         imageUrl = uploadResult.secure_url;
-      } catch (cloudinaryError) {
+      } catch (cloudinaryError: any) {
         console.warn("Cloudinary upload failed, falling back to local storage:", cloudinaryError);
-        imageUrl = await saveFileLocally(buffer, file.name, file.type);
+        try {
+          imageUrl = await saveFileLocally(buffer, file.name || "upload.png", file.type);
+        } catch (localErr: any) {
+          return NextResponse.json(
+            { error: `Cloudinary upload failed (${cloudinaryError?.message || 'Error'}). Local storage is unavailable.` },
+            { status: 500 }
+          );
+        }
       }
     } else {
-      console.log("Cloudinary is not configured. Saving file to local storage instead.");
-      imageUrl = await saveFileLocally(buffer, file.name, file.type);
+      try {
+        imageUrl = await saveFileLocally(buffer, file.name || "upload.png", file.type);
+      } catch (localErr: any) {
+        return NextResponse.json(
+          {
+            error: "Photo upload on Vercel requires Cloudinary. Local storage is read-only. Please configure CLOUDINARY credentials in Vercel.",
+          },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({
@@ -120,7 +140,7 @@ export async function POST(request: Request) {
     });
   } catch (err: any) {
     console.error("Upload API Error:", err);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: err.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -130,7 +150,7 @@ export async function POST(request: Request) {
 async function saveFileLocally(buffer: Buffer, originalFilename: string, mimeType: string): Promise<string> {
   let uploadsDir = path.join(process.cwd(), "public", "uploads");
   
-  // If running from the workspace root, adjust the path to point inside the mehendiart folder
+  // If running from the parent workspace root, adjust the path to point inside the mehendiart folder
   const workspaceRootPublic = path.join(process.cwd(), "mehendiart", "public");
   try {
     const stat = await fs.stat(workspaceRootPublic);
@@ -141,10 +161,13 @@ async function saveFileLocally(buffer: Buffer, originalFilename: string, mimeTyp
 
   await fs.mkdir(uploadsDir, { recursive: true });
 
-  const ext = originalFilename.split(".").pop() || mimeType.split("/")[1] || "png";
+  const ext = originalFilename.includes(".") 
+    ? originalFilename.split(".").pop() || "png" 
+    : (mimeType.split("/")[1] || "png");
   const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-  const baseName = originalFilename.substring(0, originalFilename.lastIndexOf('.')) || originalFilename;
-  const cleanBase = baseName.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase();
+  const lastDotIndex = originalFilename.lastIndexOf('.');
+  const baseName = lastDotIndex !== -1 ? originalFilename.substring(0, lastDotIndex) : originalFilename;
+  const cleanBase = baseName.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase() || "image";
   const filename = `${cleanBase}-${uniqueSuffix}.${ext}`;
 
   const filePath = path.join(uploadsDir, filename);

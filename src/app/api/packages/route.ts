@@ -3,21 +3,70 @@ import connectToDatabase from "@/lib/mongoose";
 import { BridalPackage } from "@/lib/models";
 import { requireAdmin, authErrorResponse } from "@/lib/auth";
 
+const DEFAULT_PACKAGES = [
+  {
+    name: "Bridal Package 1",
+    image: "/api/local-image?name=bridal1",
+    description: "Both hands front and back till elbow",
+    price: 3500,
+    includes: [
+      "Both hands front and back",
+      "Elbow-length bridal coverage",
+      "Traditional floral, paisley, and mandala detailing",
+      "Customisation for the bride's style",
+    ],
+  },
+  {
+    name: "Bridal Package 2",
+    image: "/api/local-image?name=bridal2",
+    description: "Hands till elbow with simple leg mehendi",
+    price: 4000,
+    includes: [
+      "Both hands front and back till elbow",
+      "Simple leg design",
+      "Balanced bridal detailing for elegant coverage",
+      "Ideal for intimate ceremonies and receptions",
+    ],
+  },
+  {
+    name: "Bridal Package 3",
+    image: "/api/local-image?name=bridal3",
+    description: "Complete bridal hands and legs till ankle",
+    price: 4500,
+    includes: [
+      "Both hands front and back till elbow",
+      "Full legs till ankle",
+      "Luxury bridal detailing for a grand wedding look",
+      "Best choice for elaborate wedding ceremonies",
+    ],
+  },
+];
+
 // GET /api/packages — Public
 export async function GET() {
   try {
     await connectToDatabase();
-    const packages = await Promise.race([
+    let packages = await Promise.race([
       BridalPackage.find().lean(),
       new Promise((_, reject) =>
         setTimeout(() => reject(new Error("DB timeout")), 8000)
       ),
     ]) as any[];
     
+    // Auto-seed default packages if collection is completely empty
+    if (!packages || packages.length === 0) {
+      try {
+        const created = await BridalPackage.insertMany(DEFAULT_PACKAGES);
+        packages = created.map((p) => p.toObject());
+      } catch (seedErr) {
+        console.warn("Auto-seed packages fallback:", seedErr);
+      }
+    }
+    
     // Format _id to id
-    const formattedPackages = packages.map((p: any) => {
+    const formattedPackages = (packages || []).map((p: any) => {
       return {
-        id: p._id.toString(),
+        id: p._id?.toString() || p.id,
         name: p.name,
         description: p.description,
         price: p.price,
@@ -30,7 +79,7 @@ export async function GET() {
       { success: true, packages: formattedPackages },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+          "Cache-Control": "no-store, max-age=0",
         },
       }
     );
