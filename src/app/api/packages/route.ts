@@ -5,6 +5,7 @@ import { requireAdmin, authErrorResponse } from "@/lib/auth";
 
 const DEFAULT_PACKAGES = [
   {
+    id: "package1",
     name: "Bridal Package 1",
     image: "/api/local-image?name=bridal1",
     description: "Both hands front and back till elbow",
@@ -17,6 +18,7 @@ const DEFAULT_PACKAGES = [
     ],
   },
   {
+    id: "package2",
     name: "Bridal Package 2",
     image: "/api/local-image?name=bridal2",
     description: "Hands till elbow with simple leg mehendi",
@@ -29,6 +31,7 @@ const DEFAULT_PACKAGES = [
     ],
   },
   {
+    id: "package3",
     name: "Bridal Package 3",
     image: "/api/local-image?name=bridal3",
     description: "Complete bridal hands and legs till ankle",
@@ -56,17 +59,19 @@ export async function GET() {
     // Auto-seed default packages if collection is completely empty
     if (!packages || packages.length === 0) {
       try {
-        const created = await BridalPackage.insertMany(DEFAULT_PACKAGES);
+        const toInsert = DEFAULT_PACKAGES.map(({ id, ...rest }) => rest);
+        const created = await BridalPackage.insertMany(toInsert);
         packages = created.map((p) => p.toObject());
       } catch (seedErr) {
         console.warn("Auto-seed packages fallback:", seedErr);
+        packages = DEFAULT_PACKAGES;
       }
     }
     
     // Format _id to id
-    const formattedPackages = (packages || []).map((p: any) => {
+    const formattedPackages = (packages && packages.length > 0 ? packages : DEFAULT_PACKAGES).map((p: any) => {
       return {
-        id: p._id?.toString() || p.id,
+        id: p._id ? p._id.toString() : (p.id || String(p._id)),
         name: p.name,
         description: p.description,
         price: p.price,
@@ -85,7 +90,10 @@ export async function GET() {
     );
   } catch (err: any) {
     console.error("GET Packages Error:", err);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { success: true, packages: DEFAULT_PACKAGES },
+      { headers: { "Cache-Control": "no-store, max-age=0" } }
+    );
   }
 }
 

@@ -4,15 +4,15 @@ import { GuestDesign } from "@/lib/models";
 import { requireAdmin, authErrorResponse } from "@/lib/auth";
 
 const DEFAULT_DESIGNS = [
-  { name: "Arabic Palm Design", type: "Arabic", price: 50, image: "/api/local-image?name=arabic1", description: "Clean spaced floral motifs" },
-  { name: "Arabic Wrist Design", type: "Arabic", price: 100, image: "/api/local-image?name=arabic2", description: "Intricate cuff with delicate trailing vines" },
-  { name: "Arabic Half Hand", type: "Arabic", price: 150, image: "/api/local-image?name=arabic3", description: "Flowing paisley and leaf pattern to mid-forearm" },
-  { name: "Arabic Elbow Length", type: "Arabic", price: 250, image: "/api/local-image?name=arabic4", description: "Full forearm coverage with dramatic negative space" },
-  { name: "Indian Palm Design", type: "Indian", price: 100, image: "/api/local-image?name=indian1", description: "Traditional round mandala with detailed finger caps" },
-  { name: "Indian Wrist Design", type: "Indian", price: 150, image: "/api/local-image?name=indian2", description: "Dense peacock and floral wrist band" },
-  { name: "Indian Half Hand", type: "Indian", price: 250, image: "/api/local-image?name=indian3", description: "Classic Rajasthani netting and jaal pattern" },
-  { name: "Indian 3/4 Hand", type: "Indian", price: 350, image: "/api/local-image?name=indian4", description: "Elaborate multi-tier bridal-style guest work" },
-  { name: "Indian Elbow Length", type: "Indian", price: 450, image: "/api/local-image?name=indian5", description: "Full elbow coverage with rich traditional motifs" },
+  { id: "arabic1", name: "Arabic Palm Design", type: "Arabic", price: 50, image: "/api/local-image?name=arabic1", description: "Clean spaced floral motifs" },
+  { id: "arabic2", name: "Arabic Wrist Design", type: "Arabic", price: 100, image: "/api/local-image?name=arabic2", description: "Intricate cuff with delicate trailing vines" },
+  { id: "arabic3", name: "Arabic Half Hand", type: "Arabic", price: 150, image: "/api/local-image?name=arabic3", description: "Flowing paisley and leaf pattern to mid-forearm" },
+  { id: "arabic4", name: "Arabic Elbow Length", type: "Arabic", price: 250, image: "/api/local-image?name=arabic4", description: "Full forearm coverage with dramatic negative space" },
+  { id: "indian1", name: "Indian Palm Design", type: "Indian", price: 100, image: "/api/local-image?name=indian1", description: "Traditional round mandala with detailed finger caps" },
+  { id: "indian2", name: "Indian Wrist Design", type: "Indian", price: 150, image: "/api/local-image?name=indian2", description: "Dense peacock and floral wrist band" },
+  { id: "indian3", name: "Indian Half Hand", type: "Indian", price: 250, image: "/api/local-image?name=indian3", description: "Classic Rajasthani netting and jaal pattern" },
+  { id: "indian4", name: "Indian 3/4 Hand", type: "Indian", price: 350, image: "/api/local-image?name=indian4", description: "Elaborate multi-tier bridal-style guest work" },
+  { id: "indian5", name: "Indian Elbow Length", type: "Indian", price: 450, image: "/api/local-image?name=indian5", description: "Full elbow coverage with rich traditional motifs" },
 ];
 
 // GET /api/designs — Public
@@ -29,17 +29,19 @@ export async function GET() {
     // Auto-seed default designs if collection is completely empty
     if (!designs || designs.length === 0) {
       try {
-        const created = await GuestDesign.insertMany(DEFAULT_DESIGNS);
+        const toInsert = DEFAULT_DESIGNS.map(({ id, ...rest }) => rest);
+        const created = await GuestDesign.insertMany(toInsert);
         designs = created.map((d) => d.toObject());
       } catch (seedErr) {
         console.warn("Auto-seed designs fallback:", seedErr);
+        designs = DEFAULT_DESIGNS;
       }
     }
     
     // Format _id to id
-    const formattedDesigns = (designs || []).map((d: any) => {
+    const formattedDesigns = (designs && designs.length > 0 ? designs : DEFAULT_DESIGNS).map((d: any) => {
       return {
-        id: d._id?.toString() || d.id,
+        id: d._id ? d._id.toString() : (d.id || String(d._id)),
         name: d.name,
         type: d.type,
         price: d.price,
@@ -58,7 +60,10 @@ export async function GET() {
     );
   } catch (err: any) {
     console.error("GET Designs Error:", err);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { success: true, designs: DEFAULT_DESIGNS },
+      { headers: { "Cache-Control": "no-store, max-age=0" } }
+    );
   }
 }
 
