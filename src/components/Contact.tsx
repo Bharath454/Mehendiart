@@ -186,13 +186,13 @@ export default function Contact() {
 
             <div className="mt-3 sm:mt-4 grid grid-cols-3 gap-2 sm:gap-3">
               <a
-                href="mailto:info@shahiramehandi.com"
+                href="mailto:chennaimehendiart@gmail.com"
                 className="flex items-center space-x-1.5 sm:space-x-3 p-2 sm:p-3 bg-mehendi-dark/5 rounded-xl sm:rounded-2xl border border-mehendi-dark/10 hover:bg-mehendi-dark/10 transition-colors text-left min-w-0"
               >
                 <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-mehendi-dark shrink-0" />
                 <div className="flex flex-col min-w-0">
                   <span className="text-[8px] sm:text-[10px] uppercase font-bold text-mehendi-dark tracking-wider">Email</span>
-                  <span className="text-[9px] sm:text-xs text-mehendi-darker font-medium truncate leading-tight">info@shahiramehandi.com</span>
+                  <span className="text-[9px] sm:text-xs text-mehendi-darker font-medium truncate leading-tight">chennaimehendiart@gmail.com</span>
                 </div>
               </a>
 

@@ -157,8 +157,8 @@ export default function Footer() {
               </li>
               <li className="flex items-start space-x-3">
                 <Mail className="h-5 w-5 text-mehendi-gold shrink-0 mt-0.5" />
-                <a href="mailto:info@shahiramehandi.com" className="hover:text-mehendi-gold transition-colors break-all">
-                  info@shahiramehandi.com
+                <a href="mailto:chennaimehendiart@gmail.com" className="hover:text-mehendi-gold transition-colors break-all">
+                  chennaimehendiart@gmail.com
                 </a>
               </li>
               <li className="flex items-start space-x-3">
